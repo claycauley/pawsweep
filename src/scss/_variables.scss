@@ -1,0 +1,207 @@
+// Color palette used for puzzle regions (still pastel, but hues are spread out so neighbors read apart)
+//        orange   lime     cyan     violet   coral    yellow   blue     pink     mint     tan
+$palette: #ffb86b, #b9e769, #6fdcf0, #b39cff, #ff8a80, #fff176, #7fb2ff, #ff9ee0, #62dfb4, #d2a679;
+
+// Selectable palettes (Options > Theme > Color Palette). Same order / count as $palette.
+//                  orange   lime     cyan     violet   coral    yellow   blue     pink     mint     tan
+$palette-pastel:  #ffd9b3, #dcf0b0, #b8ecf5, #d9ccff, #ffc9c4, #fff5b8, #c2d9ff, #ffd0f0, #b5efd9, #e6d3bb;
+$palette-vibrant: #ff9800, #7ed321, #00bcd4, #7c4dff, #ff4d4d, #ffd600, #2979ff, #ff3dac, #00c98d, #b0733a;
+//                orange   yellow   red      apricot  pink     brown    amber    blush    cream    berry
+$palette-warm:    #ff7043, #ffd54f, #d32f2f, #ffcc80, #ec407a, #b0713f, #ff9800, #f8bbd0, #fff59d, #c2185b;
+//                blue     teal     purple   green    sky      indigo   leaf     lavender cyan     slate
+$palette-cool:    #42a5f5, #26a69a, #7e57c2, #a5d6a7, #81d4fa, #3f51b5, #66bb6a, #b39ddb, #80deea, #90a4ae;
+
+// Seasonal palettes
+//                 pink     mint     yellow   lilac    sky      peach    seafoam  rose     lime     lavender
+$palette-easter:   #ffc4d6, #c4f0c2, #fff0a0, #d6bcff, #a8e0ff, #ffcfa3, #a9e5cf, #f5a3d0, #dff29a, #b8a9e8;
+//                 red      pink     blush    magenta  hotpink  plum     rose     crimson  orchid   violet
+$palette-valentine: #e53950, #ff8fab, #ffd0dc, #b5179e, #ff5d8f, #7b2d5b, #f7a1b5, #c2004f, #e58bd0, #9d4edd;
+//                 orange   purple   green    charcoal bone     blood    amber    teal     violet   brown
+$palette-halloween: #ff7518, #6a0dad, #8bc34a, #3d3d52, #eadfc4, #b71c1c, #ffc107, #1b998b, #b565c9, #7b4a2a;
+//                 pumpkin  mustard  burgundy olive    brown    cranberry cream    rust     sage     plum
+$palette-thanksgiving: #e8791d, #d9a521, #8c2f39, #7a8b3a, #7b4b2a, #c2294a, #f3e2b3, #b5502a, #a7b98a, #6e3b5c;
+//                 red      green    gold     snow     silver   pine     coral    lime     ice      burgundy
+$palette-christmas: #d32f2f, #2e7d32, #ffc107, #eef6fb, #b0bec5, #00796b, #ff7a6b, #8bc34a, #81d4fa, #8e1b2a;
+
+// High Contrast mode palette: fully saturated colors that differ strongly in hue AND lightness.
+// Must have the same number of colors as $palette.
+//            yellow   blue     red      white    green    purple   orange   lime     cyan     magenta
+$palette-hc: #ffe600, #1f4fff, #e00000, #ffffff, #00b84a, #8a2be2, #ff8000, #b6ff00, #00e5ff, #ff2fb9;
+
+// ---- Site theme -------------------------------------------------------------
+// Light: layered creams. Dark: midnight blues with a cream foreground.
+// Every site color lives here as a variable, so a theme is edited in one place.
+:root {
+  --font-heading: "Fredoka", "Nunito", system-ui, sans-serif;
+  --font-body: "Nunito", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  // Page
+  --bg: #fbf5e6;
+  --bg-gradient: linear-gradient(170deg, #fdf8ec 0%, #f8efd9 55%, #f1e5c8 100%);
+  --fg: #2b3550;
+  // Solid secondary text color (use instead of opacity, which lowers contrast unpredictably)
+  --muted: #4a5268;
+  --focus-ring: #3b4d78;
+
+  // Success (solve time pill): sage green that sits well with the creams
+  --success-bg: #e3f0da;
+  --success-fg: #24502a;
+  --success-border: #a9cf9c;
+
+  // Header + mobile menu
+  --header-bg: #fffaf0;
+  --header-fg: #2b3550;
+  --header-border: #e6d9b8;
+  --nav-hover: #f3e8cc;
+
+  // Buttons + inputs
+  --btn: #ecdfbd;
+  --btn-fg: #2b3550;
+  --accent: #3b4d78;
+  --accent-fg: #fffaf0;
+  --card: #fffaf0;
+  --line: #d8c89f;
+
+  // Grid container
+  --container-bg: #fffaf0;
+  --container-border: #e6d9b8;
+  --container-glow: 0 0 0 0 transparent;
+
+  // Glossy buttons (see the glossy mixins below): a deep blue outline + lip like the artwork
+  --btn-edge: #1e3a8a;
+  --btn-lip: #142a6e;
+  --accent-edge: #172346;
+  --accent-lip: #0f1832;
+  --gloss: rgba(255, 255, 255, 0.75);
+  --gloss-accent: rgba(255, 255, 255, 0.3);
+  // Share button: green in Light
+  --share: #4fae5a;
+  --share-fg: #ffffff;
+  --share-edge: #2c7a37;
+  --share-lip: #1f5a28;
+}
+
+// Glossy, tactile button: outline, bright gloss on the top half, shaded bottom, and a "lip" underneath that
+// squashes when pressed. Colors come from theme variables, so it swaps with Light / Dark automatically.
+@mixin glossy(
+  $face: var(--btn),
+  $ink: var(--btn-fg),
+  $edge: var(--btn-edge),
+  $lip: var(--btn-lip),
+  $gloss: var(--gloss)
+) {
+  background:
+    linear-gradient(180deg, $gloss 0%, rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.16) 100%),
+    $face;
+  color: $ink;
+  border: 2px solid $edge;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.14),
+    0 3px 0 $lip,
+    0 7px 12px rgba(0, 0, 0, 0.2);
+  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.12s ease;
+
+  // Hover: brighter, lifts up a little (only on devices that really hover)
+  @media (hover: hover) {
+    &:hover:not(:disabled) {
+      filter: brightness(1.08) saturate(1.08);
+      transform: translateY(-1px);
+      box-shadow:
+        inset 0 2px 0 rgba(255, 255, 255, 0.65),
+        inset 0 -3px 0 rgba(0, 0, 0, 0.14),
+        0 4px 0 $lip,
+        0 10px 16px rgba(0, 0, 0, 0.24);
+    }
+  }
+
+  // Active: pushed down into its lip, light and shadow swap
+  &:active:not(:disabled) {
+    filter: brightness(0.95);
+    transform: translateY(3px);
+    box-shadow:
+      inset 0 3px 6px rgba(0, 0, 0, 0.3),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.35),
+      0 0 0 $lip,
+      0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  &:disabled {
+    filter: saturate(0.5);
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), 0 2px 0 $lip;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    &:hover:not(:disabled),
+    &:active:not(:disabled) { transform: none; }
+  }
+}
+
+// The accent-colored version (primary actions)
+@mixin glossy-accent {
+  @include glossy(var(--accent), var(--accent-fg), var(--accent-edge), var(--accent-lip), var(--gloss-accent));
+}
+
+// A selected option in a button group: stays pushed in, accent colored
+@mixin glossy-selected {
+  &,
+  &:hover:not(:disabled),
+  &:active:not(:disabled) {
+    background:
+      linear-gradient(180deg, rgba(0, 0, 0, 0.24) 0%, rgba(0, 0, 0, 0) 55%, rgba(255, 255, 255, 0.16) 100%),
+      var(--accent);
+    color: var(--accent-fg);
+    border-color: var(--accent-edge);
+    filter: none;
+    transform: translateY(2px);
+    box-shadow:
+      inset 0 3px 6px rgba(0, 0, 0, 0.35),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.3);
+  }
+}
+
+// Dark theme (system preference or manual toggle)
+@mixin dark-theme {
+  --bg: #0e1526;
+  --bg-gradient: linear-gradient(170deg, #162038 0%, #0e1526 55%, #0a101d 100%);
+  --fg: #e9e1cc;
+  --muted: #b4b1a8;
+  --focus-ring: #e3c47a;
+
+  --success-bg: #1b3d33;
+  --success-fg: #b5e8c9;
+  --success-border: #2f6b55;
+
+  // Share button: purple in Dark
+  --share: #7b5fd1;
+  --share-fg: #ffffff;
+  --share-edge: #4b3794;
+  --share-lip: #342569;
+  --header-bg: #111a2e;
+  --header-fg: #e9e1cc;
+  --header-border: #25314f;
+  --nav-hover: #1c2845;
+
+  --btn: #26376a;
+  --btn-fg: #f3ecd8;
+  --accent: #e3c47a;
+  --accent-fg: #0e1526;
+  --card: #16213a;
+  --line: #2c3b60;
+
+  // Glossy buttons: bright blue outline (like the artwork's glow) around a blue face
+  --btn-edge: #5b8cff;
+  --btn-lip: #060b1c;
+  --accent-edge: #a67d1f;
+  --accent-lip: #5c4411;
+  --gloss: rgba(255, 255, 255, 0.28);
+  --gloss-accent: rgba(255, 255, 255, 0.5);
+
+  --container-bg: #141d33;
+  --container-border: #26345a;
+  --container-glow: 0 0 0 1px #2f4a82;
+  --cb-gradient: linear-gradient(160deg, #2b4a8a 0%, #14213d 100%);
+  --cb-shape: #ffffff;
+  color-scheme: dark;
+}

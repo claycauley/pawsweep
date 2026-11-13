@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Paw Sweep</title>
+<meta name="theme-color" content="#fffaf0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="src/icons/icon-192.png">
+<link rel="apple-touch-icon" href="src/icons/apple-touch-icon-v3.png">
+<link rel="stylesheet" href="src/css/main.css">
+<script>(function () {
+  // The splash is for the installed app. In a normal browser, add ?splash to the address to preview it
+  // (?splash=notch also fakes a phone notch / home bar so the safe-area padding can be checked).
+  var q = new URLSearchParams(location.search).get("splash"), h = document.documentElement;
+  if (matchMedia("(display-mode: standalone)").matches || navigator.standalone || q !== null) h.classList.add("is-app");
+  if (q === "notch") h.classList.add("splash-notch");
+})();</script>
+</head>
+<body>
+<!-- Color Blind mode: makes each tile's shape look pressed into the tile (see html.cb-mode.deboss in _components.scss).
+     Kept at 0x0 rather than display:none, because browsers skip filters inside hidden SVGs. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <filter id="shape-deboss" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+      <!-- soft height map from the shape's silhouette -->
+      <feGaussianBlur in="SourceAlpha" stdDeviation="1.6" result="height"/>
+      <!-- light from the top-left; a negative surfaceScale turns the shape into a dent instead of a bump -->
+      <feDiffuseLighting in="height" surfaceScale="-2" diffuseConstant="1.5" lighting-color="#fff" result="shade">
+        <feDistantLight azimuth="225" elevation="55"/>
+      </feDiffuseLighting>
+      <feComposite in="shade" in2="SourceAlpha" operator="in" result="shadeIn"/>
+      <feBlend in="SourceGraphic" in2="shadeIn" mode="multiply" result="body"/>
+      <!-- glossy catch-light on the far (bottom-right) inner edge -->
+      <feSpecularLighting in="height" surfaceScale="-5" specularConstant="0.8" specularExponent="18" lighting-color="#fff" result="spec">
+        <feDistantLight azimuth="225" elevation="40"/>
+      </feSpecularLighting>
+      <feComposite in="spec" in2="SourceAlpha" operator="in" result="specIn"/>
+      <!-- thin light rim just outside the lower-right edge, like the tile surface catching the light -->
+      <feOffset in="SourceAlpha" dx="0.8" dy="1" result="rimShape"/>
+      <feFlood flood-color="#fff" flood-opacity="0.5"/>
+      <feComposite in2="rimShape" operator="in" result="rim"/>
+      <feMerge>
+        <feMergeNode in="rim"/>
+        <feMergeNode in="body"/>
+        <feMergeNode in="specIn"/>
+      </feMerge>
+    </filter>
+  </defs>
+</svg>
+<div id="splash" class="splash" role="dialog" aria-label="Paw Sweep">
+  <img class="splash__logo" src="src/imgs/paw-sweep-logo.webp" alt="Paw Sweep">
+  <button type="button" class="splash__play" aria-label="Play now"><img src="src/imgs/play-now.webp" alt="Play Now" draggable="false"></button>
+</div>
+<div id="levels-backdrop" class="levels-backdrop"></div>
+<header class="site-header">
+  <div class="site-header__inner">
+    <a class="site-header__logo" href="./" aria-label="Paw Sweep home"><img src="src/imgs/paw-sweep-logo.webp" alt="Paw Sweep"></a>
+    <div class="site-header__actions">
+      <!-- Mobile only: Options lives in the header as a button, so it can't be mistaken for the hamburger -->
+      <button type="button" class="opt-head-btn" id="opt-head-btn" aria-haspopup="dialog"><img class="opt-head-btn__icon" src="src/imgs/icons/gear.webp" alt=""><span>Options</span></button>
+      <button id="nav-toggle" class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle menu">
+        <span class="nav-toggle__bar"></span>
+        <span class="nav-toggle__bar"></span>
+        <span class="nav-toggle__bar"></span>
+      </button>
+    </div>
+    <nav id="site-nav" class="site-nav" aria-label="Main">
+      <a href="#play" id="play">Play</a>
+      <a href="#" id="how-to-play">How to Play</a>
+
+      <!-- Level select: dropdown on desktop, slides down inside the nav on mobile -->
+      <div class="levels-menu" id="levels-menu">
+        <button type="button" class="levels-menu__btn" id="levels-menu-btn" aria-expanded="false" aria-controls="levels-panel">
+          <span>Levels</span>
+          <svg class="levels-menu__chevron" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="levels-menu__panel" id="levels-panel" role="region" aria-label="Level select">
+          <div class="levels-menu__inner">
+            <div class="levels-menu__head">
+              <h3 class="levels-menu__title" id="levels-title">Levels</h3>
+              <span class="levels-menu__count" id="levels-count"></span>
+            </div>
+            <div class="levels-menu__viewport" id="levels-viewport"><div class="levels-menu__track" id="levels-track"></div></div>
+            <div class="levels-menu__pager">
+              <button type="button" class="levels-menu__arrow" id="levels-prev" aria-label="Previous levels"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <div class="levels-menu__dots" id="levels-dots"></div>
+              <button type="button" class="levels-menu__arrow" id="levels-next" aria-label="Next levels"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- <a href="#levels">Levels</a> -->
+      <!-- <a href="#about">About</a> -->
+      <a href="#daily" id="daily" class="site-nav__daily"><img class="site-nav__daily-icon" src="src/imgs/icons/calendar.webp" alt="">Daily</a>
+
+      <!-- Desktop: custom dropdown (Light / Dark) -->
+      <div class="theme-menu" id="theme-menu">
+        <button type="button" class="theme-menu__btn" id="theme-menu-btn" aria-haspopup="listbox" aria-expanded="false" aria-controls="theme-menu-list">
+          <img class="theme-icon" id="theme-menu-icon" src="src/imgs/icons/sun.webp" alt="">
+          <span id="theme-menu-label"></span>
+          <svg class="theme-menu__chevron" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <ul class="theme-menu__list" id="theme-menu-list" role="listbox" aria-label="Theme" tabindex="-1">
+          <li role="option" data-theme-choice="light"><img class="theme-icon" src="src/imgs/icons/sun.webp" alt="">Light</li>
+          <li role="option" data-theme-choice="dark"><img class="theme-icon" src="src/imgs/icons/moon.webp" alt="">Dark</li>
+        </ul>
+      </div>
+
+      <!-- Desktop: Options dropdown (gear) -->
+      <div class="opt-menu" id="opt-menu">
+        <button type="button" class="opt-menu__btn" id="opt-menu-btn" aria-haspopup="dialog" aria-label="Options">
+          <img class="theme-icon" src="src/imgs/icons/gear.webp" alt="">
+        </button></div>
+    </nav>
+  </div>
+</header>
+<main class="game">
+<section class="level-head">
+  <h2 id="level-title" class="level-head__title"></h2>
+  <p id="level-note" class="level-head__note"></p>
+</section>
+<!-- One row: difficulty dropdown on the left, lives on the right -->
+<div class="status-row">
+  <div id="difficulty" class="diff-menu">
+    <button type="button" class="diff-menu__btn" id="diff-btn" aria-haspopup="listbox" aria-expanded="false" aria-controls="diff-list" aria-label="Difficulty">
+      <span id="diff-current">Normal</span>
+      <svg class="diff-menu__chevron" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="diff-menu__list" id="diff-list" role="listbox" aria-label="Difficulty">
+      <button type="button" role="option" data-diff="easy">Easy</button>
+      <button type="button" role="option" data-diff="normal">Normal</button>
+      <button type="button" role="option" data-diff="hard">Hard</button>
+      <button type="button" role="option" data-diff="crazy">Wicked</button>
+    </div>
+  </div>
+  <div id="lives"></div>
+  <span id="timer" class="timer-pill" role="timer" aria-label="Elapsed time"><img class="timer-pill__icon" src="src/imgs/icons/clock.webp" alt=""><span id="timer-text">0:00</span></span>
+</div>
+<div id="grid-container"><div id="grid"></div><img id="win-banner" class="win-banner" src="src/imgs/nice-work.webp" alt="" aria-hidden="true"><div id="overlay" class="overlay" hidden></div></div>
+<div class="powerups-box">
+  <div class="powerups-box__label"><img src="src/imgs/icons/powerup.webp" alt=""><span>Power Ups</span></div>
+  <div id="bar"></div>
+</div>
+<!-- Under the power-ups: Undo for ✕ marks (disabled until there is one), plus on phones in the daily a button back to the regular puzzles -->
+<div class="under-actions">
+  <button type="button" id="leave-daily" class="under-btn" hidden><img src="src/imgs/icons/exit.webp" alt=""><span>Leave Daily</span></button>
+  <button type="button" id="undo" class="under-btn" aria-label="Undo last ✕"><img src="src/imgs/icons/retry.webp" alt=""><span>Undo</span></button>
+</div>
+<!-- Mobile: always-visible Options button under the power-ups (opens the Options modal) -->
+<div id="msg"></div>
+</main>
+
+<div id="daily-modal" class="modal">
+  <div class="result" role="dialog" aria-modal="true" aria-labelledby="daily-title">
+    <p class="result__eyebrow">Paw Sweep</p>
+    <h3 class="result__title" id="daily-title">Daily Puzzles</h3>
+    <p class="result__text">Complete each daily puzzle difficulty to unlock the next. Earn additional <img class="inline-icon" src="src/imgs/icons/powerup.webp" alt=""> for every puzzle you beat. Complete them all for the ultimate reward!</p>
+    <div class="result__actions"><button type="button" class="primary" id="daily-go"><img class="inline-icon" src="src/imgs/icons/checkmark.webp" alt=""> Let's Go!</button></div>
+  </div>
+</div>
+
+<div id="update-modal" class="modal">
+  <div class="result" role="dialog" aria-modal="true" aria-labelledby="update-title">
+    <p class="result__eyebrow" id="update-version"></p>
+    <h3 class="result__title" id="update-title">Update Notes</h3>
+    <p class="result__text update-date"><img class="inline-icon" src="src/imgs/icons/calendar.webp" alt=""><span id="update-date"></span></p>
+    <ul class="update-list" id="update-list"></ul>
+    <p class="result__text update-thanks">Thank you for testing my game and providing valuable feedback.<br>- Clay</p>
+    <div class="result__actions"><button type="button" class="primary" id="update-close"><img class="inline-icon" src="src/imgs/icons/checkmark.webp" alt=""> Got It</button></div>
+  </div>
+</div>
+
+<div id="help-modal" class="modal">
+  <div class="result" role="dialog" aria-modal="true" aria-labelledby="help-title">
+    <p class="result__eyebrow">Paw Sweep</p>
+    <h3 class="result__title" id="help-title">How to Play</h3>
+    <section class="opt-section"><h4 class="opt-section__title"><img class="opt-section__icon" src="src/imgs/icons/rules.webp" alt="">Game Rules</h4>
+    <p class="result__text"><span data-touch="Tap" data-mouse="Click">Tap</span> a tile to <img class="inline-icon" src="src/imgs/icons/cross-mark.webp" alt="cross"> it out. Drag to <img class="inline-icon" src="src/imgs/icons/cross-mark.webp" alt="cross"> multiple tiles at once. <span data-touch="Double-tap" data-mouse="Double-click">Double-tap</span> to place a <img class="inline-icon" src="src/imgs/icons/paw-print.webp" alt="paw">. Be careful though! A wrong <img class="inline-icon" src="src/imgs/icons/paw-print.webp" alt="paw"> costs <strong>one</strong> <img class="inline-icon" src="src/imgs/icons/heart.webp" alt="heart">. Too many <img class="inline-icon" src="src/imgs/icons/broken-heart.webp" alt="broken heart"> and it's <strong>GAME OVER</strong>. Plan your moves by long pressing to add a <img class="inline-icon" src="src/imgs/icons/question.webp" alt="question">. There is only <strong>one</strong> <img class="inline-icon" src="src/imgs/icons/paw-print.webp" alt="paw"> per colored region, column and row. <img class="inline-icon" src="src/imgs/icons/paw-print.webp" alt="paw"> <strong>can not</strong> touch in <strong>any</strong> direction. You may <img class="inline-icon" src="src/imgs/icons/retry.webp" alt="undo"> any move prior to placing a <img class="inline-icon" src="src/imgs/icons/paw-print.webp" alt="paw">. After placement, all <img class="inline-icon" src="src/imgs/icons/cross-mark.webp" alt="cross"> are locked in unless you manually remove them.</p></section>
+    <section class="opt-section"><h4 class="opt-section__title"><img class="opt-section__icon" src="src/imgs/icons/powerup.webp" alt="">Power Ups</h4>
+    <ul class="help-list">
+      <li><img src="src/imgs/icons/shield.webp" alt="Shield"><span><strong>Shield</strong> protects you from 2 wrong paws.<small>Earn one every 5 levels cleared.</small></span></li>
+      <li><img src="src/imgs/icons/life-up.webp" alt="Extra life"><span><strong>Extra Life</strong> restores a lost heart.<small>Earn one every 10 levels cleared.</small></span></li>
+      <li><img src="src/imgs/icons/hint.webp" alt="Hint"><span><strong>Hint</strong> reveals a correct paw.<small>Earn one every 15 levels cleared.</small></span></li>
+    </ul></section>
+    <section class="opt-section"><h4 class="opt-section__title"><img class="opt-section__icon" src="src/imgs/icons/calendar.webp" alt="">Daily Puzzle</h4>
+    <p class="result__text">Every day there is a special puzzle for each difficulty level. Completing each will earn you additional power ups. Complete them all to earn even more!</p></section>
+    <div class="result__actions"><button type="button" class="primary" id="help-close"><img class="inline-icon" src="src/imgs/icons/checkmark.webp" alt="checkmark"> Sounds Good</button></div>
+  </div>
+</div>
+
+<!-- Mobile Options modal -->
+<div id="options-modal" class="modal">
+  <div class="result" role="dialog" aria-modal="true" aria-labelledby="options-title">
+    <p class="result__eyebrow">Paw Sweep <button type="button" class="version-link" id="version-link" aria-label="Version, tap for update notes"></button></p>
+    <h3 class="result__title" id="options-title">Options</h3>
+    <section class="opt-section" aria-labelledby="opt-sound-title">
+      <h4 class="opt-section__title" id="opt-sound-title"><img class="opt-section__icon" src="src/imgs/icons/music-note.webp" alt="">Sound</h4>
+      <!-- Music + effects share one grid so their labels (and so their sliders) line up -->
+      <div class="opt-group">
+        <div class="opt-row">
+          <span class="opt-row__label" id="music-label-modal">Background Music</span>
+          <input type="range" class="opt-slider" id="music-volume" aria-label="Music volume" min="0" max="100" step="5" value="35" data-music-volume>
+          <button type="button" class="music-toggle" role="switch" aria-checked="true" aria-labelledby="music-label-modal" data-music-toggle><span class="music-toggle__text music-toggle__text--on">On</span><span class="music-toggle__text music-toggle__text--off">Off</span><img class="music-toggle__knob" src="src/imgs/icons/toggle.webp" alt=""></button>
+        </div>
+        <div class="opt-row">
+          <span class="opt-row__label" id="sfx-label-modal">Sound Effects</span>
+          <input type="range" class="opt-slider" id="sfx-volume" aria-label="Effects volume" min="0" max="100" step="5" value="100" data-sfx-volume>
+          <button type="button" class="music-toggle" role="switch" aria-checked="true" aria-labelledby="sfx-label-modal" data-sfx-toggle><span class="music-toggle__text music-toggle__text--on">On</span><span class="music-toggle__text music-toggle__text--off">Off</span><img class="music-toggle__knob" src="src/imgs/icons/toggle.webp" alt=""></button>
+        </div>
+      </div>
+      <div class="opt-row">
+        <span class="opt-row__label" id="style-label-modal">Music Style</span>
+        <!-- Options are generated from MUSIC_STYLES in src/js/music.js -->
+        <div class="opt-select" id="music-style-menu">
+          <button type="button" class="opt-select__btn" id="music-style-btn" aria-haspopup="listbox" aria-expanded="false" aria-controls="music-style-list" aria-labelledby="style-label-modal music-style-current">
+            <span id="music-style-current">Type A</span>
+            <svg class="opt-select__chevron" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="opt-select__list" id="music-style-list" role="listbox" aria-labelledby="style-label-modal"></div>
+        </div>
+      </div>
+    </section>
+    <section class="opt-section" aria-labelledby="opt-access-title">
+      <h4 class="opt-section__title" id="opt-access-title"><img class="opt-section__icon" src="src/imgs/icons/accessibility.webp" alt="">Accessibility</h4>
+      <div class="opt-row">
+        <span class="opt-row__label" id="cb-label-modal">Color Blind Mode</span>
+        <button type="button" class="music-toggle" role="switch" aria-checked="false" aria-labelledby="cb-label-modal" data-a11y-toggle="colorblind"><span class="music-toggle__text music-toggle__text--on">On</span><span class="music-toggle__text music-toggle__text--off">Off</span><img class="music-toggle__knob" src="src/imgs/icons/toggle.webp" alt=""></button>
+      </div>
+      <div class="opt-row">
+        <span class="opt-row__label" id="hc-label-modal">High Contrast Tiles</span>
+        <button type="button" class="music-toggle" role="switch" aria-checked="false" aria-labelledby="hc-label-modal" data-a11y-toggle="contrast"><span class="music-toggle__text music-toggle__text--on">On</span><span class="music-toggle__text music-toggle__text--off">Off</span><img class="music-toggle__knob" src="src/imgs/icons/toggle.webp" alt=""></button>
+      </div>
+    </section>
+    <section class="opt-section" aria-labelledby="opt-theme-title">
+      <h4 class="opt-section__title" id="opt-theme-title"><img class="opt-section__icon" src="src/imgs/icons/theme.webp" alt="">Theme</h4>
+      <div class="theme-split" role="radiogroup" aria-labelledby="opt-theme-title">
+        <button type="button" role="radio" data-theme-choice="light"><img class="theme-icon" src="src/imgs/icons/sun.webp" alt="">Light</button>
+        <button type="button" role="radio" data-theme-choice="dark"><img class="theme-icon" src="src/imgs/icons/moon.webp" alt="">Dark</button>
+      </div>
+      <div class="opt-row">
+        <span class="opt-row__label" id="palette-label-modal">Color Palette</span>
+        <div class="opt-select" id="palette-menu">
+          <button type="button" class="opt-select__btn" id="palette-btn" aria-haspopup="listbox" aria-expanded="false" aria-controls="palette-list" aria-labelledby="palette-label-modal palette-current">
+            <span id="palette-current">Default</span>
+            <svg class="opt-select__chevron" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="opt-select__list" id="palette-list" role="listbox" aria-labelledby="palette-label-modal">
+            <button type="button" role="option" aria-selected="true" data-palette-choice="default">Default</button>
+            <button type="button" role="option" aria-selected="false" data-palette-choice="pastel">Pastel</button>
+            <button type="button" role="option" aria-selected="false" data-palette-choice="vibrant">Vibrant</button>
+            <button type="button" role="option" aria-selected="false" data-palette-choice="warm">Warm</button>
+            <button type="button" role="option" aria-selected="false" data-palette-choice="cool">Cool</button>
+            <button type="button" role="option" aria-selected="false" data-palette-choice="easter">Easter</button>
+            <button type="button" role="option" aria-selected="false" data-palette-choice="valentine">Valentine's</button>
+            <button type="button" role="option" aria-selected="false" data-palette-choice="halloween">Halloween</button>
+            <button type="button" role="option" aria-selected="false" data-palette-choice="thanksgiving">Thanksgiving</button>
+            <button type="button" role="option" aria-selected="false" data-palette-choice="christmas">Christmas</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <div class="result__actions"><button type="button" class="primary" id="options-close"><img class="inline-icon" src="src/imgs/icons/checkmark.webp" alt=""> Done</button></div>
+  </div>
+</div>
+
+<script type="module" src="src/js/main.js"></script>
+</body>
+</html>

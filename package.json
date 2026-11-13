@@ -1,0 +1,17 @@
+{
+  "name": "paw-sweep",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Paw Sweep puzzle game",
+  "scripts": {
+    "sass:build": "sass src/scss/main.scss:src/css/main.css --no-source-map --style=compressed",
+    "sass:watch": "sass --watch src/scss/main.scss:src/css/main.css --no-source-map",
+    "levels:build": "node scripts/build-levels.mjs",
+    "pwa:build": "node scripts/build-pwa.mjs",
+    "build": "npm run sass:build && npm run pwa:build"
+  },
+  "devDependencies": {
+    "sass": "^1.77.0"
+  }
+}

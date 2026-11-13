@@ -1,0 +1,992 @@
+﻿$header-height: 80px;
+$breakpoint: 760px;
+@use "variables" as v;
+
+// Dims + blurs the page behind the open level select, like the Options / How to Play modals.
+// It sits just under the header (z-index 100), so the header and the level panel stay sharp.
+.levels-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+
+  &.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity 0.25s ease, visibility 0s;
+  }
+
+  @media (prefers-reduced-motion: reduce) { transition: none; }
+}
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--header-bg);
+  color: var(--header-fg);
+  border-bottom: 2px solid var(--header-border);
+
+  &__inner {
+    position: relative; // anchor for the mobile dropdown
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1280px;
+    min-height: $header-height;
+    margin: 0 auto;
+    padding: 8px 16px;
+  }
+
+  &__logo {
+    display: block;
+    line-height: 0;
+
+    img {
+      display: block;
+      height: 64px;
+      width: auto;
+    }
+  }
+
+  // Holds the mobile Options button and the hamburger (nothing visible on desktop)
+  &__actions { display: contents; }
+}
+
+// Mobile header Options button: a glossy accent pill, clearly different from the plain hamburger beside it
+.opt-head-btn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
+  @include v.glossy-accent;
+
+  &__icon { display: block; width: 1.5em; height: 1.5em; object-fit: contain; }
+}
+
+// ---- Nav -------------------------------------------------------------------
+.site-nav {
+  display: flex;
+  gap: 8px;
+
+  a {
+    padding: 8px 12px;
+    border-radius: 12px;
+    color: var(--header-fg);
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-heading);
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    transition: background-color 0.15s ease;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--nav-hover);
+    }
+  }
+
+  // Daily stands out from the regular links: filled accent pill
+  .site-nav__daily {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    @include v.glossy-accent;
+
+    &-icon {
+      width: 1.5em;
+      height: 1.5em;
+      object-fit: contain;
+    }
+
+    &:hover,
+    &:focus-visible {
+      background:
+        linear-gradient(180deg, var(--gloss-accent) 0%, rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.16) 100%),
+        var(--accent);
+    }
+  }
+}
+
+// ---- Theme selector (desktop dropdown) -------------------------------------
+.theme-icon {
+  display: inline-block;
+  width: 1.5em;
+  height: 1.5em;
+  object-fit: contain;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+.theme-menu__btn .theme-icon { margin-right: 0; }
+
+.theme-menu {
+  // Not positioned itself: the list anchors to .site-header__inner, so it drops below the header like the level select
+  &__btn {
+    // Same glossy bubble as the difficulty dropdown
+    @include v.glossy;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-family: var(--font-heading);
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    height: stretch;
+  }
+
+  &__chevron {
+    transition: transform 0.25s ease;
+  }
+
+  &.is-open &__chevron {
+    transform: rotate(180deg);
+  }
+
+  &__list {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 16px;
+    z-index: 10;
+    min-width: 180px;
+    margin: 0;
+    padding: 8px;
+    list-style: none;
+    display: grid;
+    gap: 8px;
+    background: var(--card);
+    border: 1px solid var(--btn-edge);
+    border-radius: 16px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
+
+    li {
+      @include v.glossy;
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-family: var(--font-heading);
+      font-weight: 500;
+      white-space: nowrap;
+      cursor: pointer;
+      margin-bottom: 3px;
+
+      // The current theme stays pushed in, accent colored
+      &[aria-selected="true"] { @include v.glossy-selected; }
+    }
+  }
+
+  &.is-open &__list {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s;
+  }
+}
+
+// ---- Theme switch (mobile: two side-by-side buttons inside the Options modal) ----
+.theme-split { display: none; } // desktop changes Light/Dark from the nav dropdown instead
+
+.theme-split {
+  display: flex;
+  gap: 12px;
+
+  button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 0;
+    padding: 12px;
+    border-radius: 12px;
+    font-family: var(--font-heading);
+    font-weight: 500;
+    cursor: pointer;
+    @include v.glossy;
+    margin-bottom: 3px; // room for the lip
+
+    &[aria-checked="true"] { @include v.glossy-selected; }
+  }
+}
+
+// ---- Level select (desktop dropdown; slides down inside the nav on mobile) --
+// Colors come from the same theme variables as everything else, so it follows Light / Dark.
+.levels-menu {
+  // Not positioned itself: the panel anchors to .site-header__inner so it can be wider than the button
+  &__btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    background: transparent;
+    color: var(--header-fg);
+    font-family: var(--font-heading);
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    cursor: pointer;
+    height: 100%;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+
+    &:hover { background: var(--nav-hover); }
+  }
+
+  &.is-open &__btn {
+    background: var(--nav-hover);
+    border-color: var(--accent);
+  }
+
+  &__chevron { transition: transform 0.25s ease; }
+  &.is-open &__chevron { transform: rotate(180deg); }
+
+  &__panel {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 16px;
+    z-index: 10;
+    width: min(760px, calc(100vw - 32px));
+    background: var(--header-bg);
+    border: 1px solid var(--header-border);
+    border-radius: 16px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
+  }
+
+  &.is-open &__panel {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s;
+  }
+
+  // Vertical padding lives on the children (not here) so the mobile slide can collapse to exactly 0 height
+  &__inner { padding: 0 16px; }
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 16px;
+    margin-bottom: 12px;
+  }
+
+  &__title {
+    margin: 0;
+    color: var(--header-fg);
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  &__count {
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--success-bg);
+    color: var(--success-fg);
+    border: 1px solid var(--success-border);
+    font-family: var(--font-heading);
+    font-size: 0.75rem;
+    font-weight: 400;
+    white-space: nowrap;
+  }
+
+  // The swipeable strip: one page per snap point
+  &__viewport {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    padding: 2px 2px 10px; // room for the buttons' lips and shadows
+    margin: -2px -2px 0;
+
+    &::-webkit-scrollbar { display: none; }
+  }
+
+  &__track { display: flex; }
+
+  &__page {
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    display: grid;
+    grid-template-columns: repeat(var(--lvl-cols, 10), 1fr);
+    gap: 8px;
+    align-content: start;
+    padding: 0 2px; // keeps neighbouring pages from touching at the edges
+  }
+
+  &__pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 4px 0 16px;
+  }
+
+  &__dots {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    max-width: 70%;
+  }
+
+  &__dot {
+    position: relative;
+    width: 9px;
+    height: 9px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: var(--line);
+    cursor: pointer;
+    transition: width 0.25s cubic-bezier(0.3, 0.7, 0.3, 1), background-color 0.2s ease;
+
+    &::after { content: ""; position: absolute; inset: -8px -3px; } // bigger touch target
+
+    &.is-active {
+      width: 22px;
+      background: var(--accent);
+    }
+  }
+
+  &__arrow {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    @include v.glossy;
+
+    &:disabled { opacity: 0.4; cursor: default; }
+  }
+}
+
+// One level button
+.lvl {
+  position: relative;
+  height: 44px;
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--header-fg);
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+
+  &__badge {
+    position: absolute;
+    top: 3px;
+    right: 4px;
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    pointer-events: none;
+  }
+
+  &.is-beaten .lvl__badge { color: var(--success-fg); }
+
+  @media (hover: hover) {
+    &:hover:not(:disabled):not(.is-current) {
+      background: var(--nav-hover);
+      border-color: var(--accent);
+    }
+  }
+  &:active:not(:disabled):not(.is-current) { transform: translateY(2px); }
+
+  // The level being played: glossy accent, like Daily
+  &.is-current {
+    @include v.glossy-accent;
+    border-radius: 12px;
+  }
+
+  // Not beaten yet
+  &.is-locked {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: var(--nav-hover);
+    color: var(--muted);
+  }
+}
+
+// ---- Options (desktop dropdown with the Music toggle) ----------------------
+// Uses the same header variables as the theme menu, so it follows Light and Dark.
+.opt-menu__btn .theme-icon {
+  margin-right: 0;
+  width: 1.5em;
+  height: 1.5em;
+  transition: transform 0.3s ease;
+}
+
+.opt-menu {
+  position: relative;
+
+  &__btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    background: transparent;
+    color: var(--header-fg);
+    font-family: var(--font-heading);
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+
+    &:hover { background: var(--nav-hover); }
+  }
+
+  &.is-open &__btn {
+    background: var(--nav-hover);
+    border-color: var(--accent);
+  }
+
+  // Gear turns a quarter-turn while the menu is open
+  &.is-open &__btn .theme-icon { transform: rotate(360deg); }
+
+}
+
+.opt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-radius: 10px;
+  color: var(--header-fg);
+  font-family: var(--font-heading);
+  font-weight: 500;
+
+  &__label { display: inline-flex; align-items: center; }
+}
+
+// Music + effects rows: label | volume slider | toggle. One shared grid, so the label column takes the width of
+// the longest label and both sliders line up. (The rows use display: contents so their children join the grid.)
+// The Music Style row sits outside this group and is not affected.
+.opt-group {
+  display: grid;
+  grid-template-columns: auto minmax(60px, 1fr) auto;
+  align-items: center;
+  column-gap: 16px;
+  row-gap: 8px;
+
+  > .opt-row { display: contents; }
+}
+
+// The slider fades out (but keeps its space, so nothing shifts) when its toggle is Off.
+.opt-group .opt-slider {
+  opacity: 1;
+  transition: opacity 0.2s ease, visibility 0s;
+
+  @media (prefers-reduced-motion: reduce) { transition: none; }
+}
+.opt-group .opt-row:has(> [aria-checked="false"]) > .opt-slider {
+  opacity: 0;
+  visibility: hidden; // keeps it out of the tab order
+  pointer-events: none;
+  transition: opacity 0.15s ease, visibility 0s 0.15s;
+}
+
+// Volume slider: glossy recessed track (like the toggle), accent fill up to the thumb, toggle.png as the thumb.
+// --fill (0-100%) is set from JS as the value changes.
+.opt-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  --fill: 100%;
+
+  &::-webkit-slider-runnable-track {
+    height: 16px;
+    border-radius: 999px;
+    border: 2px solid var(--btn-edge);
+    background:
+      linear-gradient(90deg, var(--accent) 0, var(--accent) var(--fill), transparent var(--fill)),
+      linear-gradient(180deg, rgba(0, 0, 0, 0.18) 0%, rgba(255, 255, 255, 0) 55%, rgba(255, 255, 255, 0.2) 100%),
+      var(--nav-hover);
+    box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.3), 0 2px 0 var(--btn-lip);
+  }
+  &::-moz-range-track {
+    height: 12px;
+    border-radius: 999px;
+    border: 2px solid var(--btn-edge);
+    background:
+      linear-gradient(90deg, var(--accent) 0, var(--accent) var(--fill), transparent var(--fill)),
+      linear-gradient(180deg, rgba(0, 0, 0, 0.18) 0%, rgba(255, 255, 255, 0) 55%, rgba(255, 255, 255, 0.2) 100%),
+      var(--nav-hover);
+    box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.3), 0 2px 0 var(--btn-lip);
+  }
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 30px;
+    height: 30px;
+    margin-top: -9px; // centers the 30px thumb on the 16px track (+2px borders)
+    border: 0;
+    background: url("../imgs/icons/toggle.webp") center / contain no-repeat;
+    transition: transform 0.1s ease;
+  }
+  &::-moz-range-thumb {
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 0;
+    background: url("../imgs/icons/toggle.webp") center / contain no-repeat;
+  }
+  &:active::-webkit-slider-thumb { transform: scale(1.1); }
+  &:hover { filter: brightness(1.08); }
+}
+
+// Options modal sections: a header, then its rows
+.opt-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;               // one value controls the spacing between everything in a section
+  text-align: left;
+  margin-bottom: 10px;    // extra space between sections (on top of the card's 8px gap)
+
+  &__icon {
+    width: 1.3em;
+    height: 1.3em;
+    margin-right: 8px;
+    vertical-align: -0.25em;
+
+    // Font Awesome icon drawn in the text color (so it follows light / dark / high contrast)
+    &--mask {
+      display: inline-block;
+      background: currentColor;
+      -webkit-mask: url("../icons/fa/universal-access.svg") center / contain no-repeat;
+      mask: url("../icons/fa/universal-access.svg") center / contain no-repeat;
+    }
+
+    &--palette {
+      -webkit-mask-image: url("../icons/fa/palette.svg");
+      mask-image: url("../icons/fa/palette.svg");
+    }
+  }
+
+  &__title {
+    margin: 0 0 2px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--accent);
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--fg);
+  }
+}
+
+// Small helper line under a setting row
+.opt-hint {
+  margin: -4px 0 0;       // sits closer to its row than rows do to each other
+  padding: 0 4px;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--muted, var(--fg));
+  opacity: 0.8;
+}
+
+.opt-choice__hint {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--muted, var(--fg));
+  opacity: 0.8;
+
+  &[hidden] { display: none; }
+}
+
+.opt-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--fg);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 1.05rem;
+
+  &__btns {
+    display: flex;
+    flex-wrap: wrap; // five palette choices wrap onto a second row on narrow screens
+    gap: 8px;
+
+    button {
+      flex: 1 1 64px;
+      padding: 8px 6px;
+      border-radius: 10px;
+      font: inherit;
+      font-size: 0.95rem;
+      cursor: pointer;
+      @include v.glossy;
+      margin-bottom: 3px; // room for the lip
+
+      &[aria-checked="true"] { @include v.glossy-selected; }
+    }
+  }
+}
+
+// Dropdown inside the Options modal (same glossy look as the difficulty menu). The list opens UPWARD,
+// because the Color Palette row is the last one near the bottom of the screen.
+.opt-select {
+  position: relative;
+  flex: none;
+
+  &__btn {
+    @include v.glossy;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 130px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-family: var(--font-heading);
+    font-weight: 500;
+    font-size: 1rem;
+    white-space: nowrap;
+    cursor: pointer;
+    margin-bottom: 3px; // room for the lip
+  }
+
+  &__chevron { transition: transform 0.25s ease; transform: rotate(180deg); } // points up: the list opens upward
+  &.is-open &__chevron { transform: rotate(0deg); }
+
+  &__list {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: 0;
+    z-index: 30;
+    display: grid;
+    grid-template-rows: repeat(5, auto); // 5 per column; more options just add columns (growing to the left)
+    grid-auto-flow: column;
+    grid-auto-columns: var(--opt-col, max-content); // palette.js sets --opt-col to the widest option, so every button matches
+    gap: 8px;
+    min-width: 100%;
+    max-width: calc(100vw - 48px);
+    padding: 8px;
+    background: var(--card);
+    border: 1px solid var(--btn-edge);
+    border-radius: 12px;
+    box-shadow: 0 -14px 28px rgba(0, 0, 0, 0.5);
+
+    &#music-style-list{
+      bottom: auto;
+      margin-top: 4px;
+      box-shadow: 0 14px 28px rgba(0, 0, 0, 0.5);
+    }
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
+
+    button {
+      @include v.glossy;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-family: var(--font-heading);
+      font-weight: 500;
+      font-size: 1rem;
+      white-space: nowrap;
+      text-align: left;
+      cursor: pointer;
+      margin-bottom: 3px;
+
+      &.is-active { @include v.glossy-selected; }
+    }
+  }
+
+  &.is-open &__list {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__list, &__chevron { transition: none; }
+  }
+}
+
+// Inside the Options modal the row sits on the card, so use the page text color
+.modal .opt-row {
+  color: var(--fg);
+  font-size: 1.05rem;
+}
+
+// Mobile-only Options button under the power-ups (hidden on desktop, where the nav has the gear dropdown).
+// Full board width and filled with the accent color so it reads as different from the power-up buttons.
+.opt-fab {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: min(92vw, 58vh, 720px); // same width as the board and the power-up bar
+  margin-top: 4px;
+  margin-bottom: 4px; // room for the lip
+  padding: 14px 22px;
+  border-radius: 14px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  @include v.glossy-accent;
+
+  &__icon {
+    display: block;
+    width: 1.6rem;
+    height: 1.6rem;
+    object-fit: contain;
+  }
+}
+
+// The toggle is a slide switch: On/Off text on a track, with toggle.png as the sliding knob
+$toggle-w: 76px;
+$toggle-h: 36px;
+$knob: 28px;
+$knob-gap: 4px;
+
+.music-toggle {
+  position: relative;
+  flex: none;
+  width: $toggle-w;
+  height: $toggle-h;
+  padding: 0;
+  border-radius: 999px;
+  color: var(--fg);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  // Off: a recessed glossy track
+  border: 2px solid var(--btn-edge);
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.18) 0%, rgba(255, 255, 255, 0) 55%, rgba(255, 255, 255, 0.2) 100%),
+    var(--nav-hover);
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.3), 0 2px 0 var(--btn-lip);
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.08s ease, filter 0.12s ease;
+
+  &:active { transform: translateY(2px); box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.35), 0 0 0 var(--btn-lip); }
+
+  &__text {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    line-height: 1;
+    transition: opacity 0.2s ease;
+  }
+
+  // "On" shows on the left while the knob sits on the right, "Off" the other way round
+  &__text--on  { left: 12px; opacity: 0; }
+  &__text--off { right: 10px; opacity: 1; }
+
+  &__knob {
+    position: absolute;
+    top: 50%;
+    left: $knob-gap - 2px; // 2px border
+    width: $knob;
+    height: $knob;
+    object-fit: contain;
+    transform: translateY(-50%);
+    transition: left 0.22s cubic-bezier(0.3, 0.7, 0.3, 1);
+    pointer-events: none;
+  }
+
+  &[aria-checked="true"] {
+    // On: raised, glossy accent
+    background:
+      linear-gradient(180deg, var(--gloss-accent) 0%, rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.16) 100%),
+      var(--accent);
+    border-color: var(--accent-edge);
+    color: var(--accent-fg);
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.5), 0 2px 0 var(--accent-lip), 0 5px 10px rgba(0, 0, 0, 0.2);
+
+    .music-toggle__text--on  { opacity: 1; }
+    .music-toggle__text--off { opacity: 0; }
+    .music-toggle__knob { left: $toggle-w - $knob - $knob-gap - 2px; }
+  }
+
+  &:hover { filter: brightness(1.08); }
+
+  @media (prefers-reduced-motion: reduce) {
+    &, &__text, &__knob { transition: none; }
+  }
+}
+
+// ---- Hamburger (hidden on desktop) -----------------------------------------
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 44px;
+  height: 44px;
+  padding: 0 10px;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+
+  &__bar {
+    display: block;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--header-fg);
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+
+  &[aria-expanded="true"] {
+    .nav-toggle__bar:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+    .nav-toggle__bar:nth-child(2) { opacity: 0; }
+    .nav-toggle__bar:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+  }
+}
+
+// ---- Mobile: nav becomes a slide-down panel that overlays the content ------
+@media (max-width: $breakpoint) {
+  .site-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .opt-head-btn { display: flex; }
+
+  .nav-toggle {
+    display: flex;
+  }
+
+  .site-nav {
+    position: absolute; // out of flow, so page content is never pushed down
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 16px 16px;
+    background: var(--header-bg);
+    border-bottom: 2px solid var(--header-border);
+    box-shadow: 0 24px 24px rgba(0, 0, 0, 0.5);
+
+    // Closed state: slid up, invisible, not focusable
+    transform: translateY(-12px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 0.25s ease, opacity 0.25s ease, visibility 0s linear 0.25s;
+
+    &.is-open {
+      transform: translateY(0);
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transition: transform 0.25s ease, opacity 0.25s ease, visibility 0s;
+    }
+
+    a {
+      padding: 14px 12px;
+      border-radius: 12px;
+      font-size: 1.05rem;
+    }
+
+    .theme-menu,
+    .opt-menu { display: none; }
+  }
+
+  // Level select: a nav row that slides its panel open underneath it
+  .levels-menu {
+    &__btn {
+      width: 100%;
+      justify-content: space-between;
+      padding: 14px 12px;
+      font-size: 1.05rem;
+    }
+
+    &__panel {
+      position: static;
+      display: grid;
+      grid-template-rows: 0fr;
+      width: auto;
+      margin-top: 0;
+      border-width: 0;
+      background: transparent;
+      box-shadow: none;
+      transform: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: grid-template-rows 0.3s cubic-bezier(0.3, 0.7, 0.3, 1), margin-top 0.3s ease, opacity 0.2s ease, visibility 0s linear 0.3s;
+    }
+
+    &.is-open &__panel {
+      grid-template-rows: 1fr;
+      margin-top: 6px;
+      opacity: 1;
+      visibility: visible;
+      transition: grid-template-rows 0.3s cubic-bezier(0.3, 0.7, 0.3, 1), margin-top 0.3s ease, opacity 0.25s ease 0.05s, visibility 0s;
+    }
+
+    &__inner {
+      min-height: 0;
+      overflow: hidden;
+      padding: 0 12px;
+      border-radius: 16px;
+      background: var(--card);
+      box-shadow: inset 0 0 0 1px var(--header-border);
+    }
+
+    &__head { padding-top: 12px; margin-bottom: 10px; }
+    &__pager { padding-bottom: 12px; }
+    &__page { gap: 6px; }
+  }
+
+  .lvl { height: 46px; }
+
+  // Options now lives in the header on mobile, so the button under the power-ups stays hidden
+  .opt-fab { display: none; }
+
+  // Light / Dark buttons live in the Options modal on mobile
+  .theme-split { display: flex; }
+}

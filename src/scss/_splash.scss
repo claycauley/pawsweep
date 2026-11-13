@@ -1,0 +1,76 @@
+// Launch splash: only shown when the game runs as an installed app (html.is-app is set by a tiny inline script in
+// index.html; adding ?splash to the address shows it in a normal browser for testing). Normal visitors never see it.
+//
+// The splash image is only a background (cropped to fill any screen). The logo and Play button are real elements,
+// pinned to the top and bottom with padding that follows the screen height (about 100px on a tall phone, less on
+// short screens) and never less than the device's safe area (notch / home bar). Their positions are the same on
+// every device, so the artwork doesn't need to leave its own safe zones.
+.splash {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding:
+    max(var(--safe-top), clamp(32px, 8vh, 100px))
+    24px
+    max(var(--safe-bottom), clamp(32px, 8vh, 100px));
+  background: #0e1526 url("../icons/splash-screen.webp") center / cover no-repeat; // cropped to fill any screen
+  transition: opacity 0.6s ease, visibility 0s linear 0.6s;
+
+  &.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  &__logo {
+    display: block;
+    width: min(72vw, 440px);
+    max-height: 38vh;
+    object-fit: contain;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  // The Play button is the image itself: normal and pressed pictures are swapped by splash-new.js
+  &__play {
+    padding: 0;
+    background: none;
+    border-radius: 0;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+
+    img {
+      display: block;
+      width: min(60vw, 320px);
+      max-height: 14vh;
+      height: auto;
+      object-fit: contain;
+      user-select: none;
+    }
+
+    // Only a real keyboard Tab shows a ring (it's no longer focused automatically)
+    &:focus { outline: none; }
+    &:focus-visible { outline: 3px solid var(--focus-ring, #fff); outline-offset: 6px; border-radius: 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    & { transition: none; }
+  }
+}
+
+html.is-app .splash {
+  display: flex;
+}
+
+// ?splash=notch: pretend there is a phone notch and home bar, to check the safe-area padding on a desktop screen
+html.splash-notch .splash {
+  --safe-top: 59px;
+  --safe-bottom: 34px;
+}

@@ -1,0 +1,1067 @@
+@use "variables" as v;
+@use "sass:list";
+
+#lives {
+  display: flex;
+  gap: 2px;
+  min-height: 1.75rem;
+}
+
+.heart {
+  display: block;
+  height: 2rem;
+  width: auto;
+  transition: filter 0.2s ease, opacity 0.2s ease;
+
+  // Lost life: broken-heart image, half desaturated
+  &--lost {
+    filter: grayscale(0.5);
+  }
+
+  // Smaller lives row on mobile (same breakpoint as the nav)
+  @media (max-width: 760px) {
+    #lives & {
+      height: 1.75rem;
+    }
+  }
+}
+
+button .heart {
+  display: inline-block;
+  height: 1em;
+  margin-right: 2px;
+  vertical-align: -0.125em;
+}
+
+// Shield over the first heart: sits on top and a little larger, so the heart shows through the cracks
+.heart-wrap {
+  position: relative;
+  display: block;
+}
+
+.shield {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 135%;
+  height: 135%;
+  object-fit: contain;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+
+  // Shattered: hold briefly, then fade out
+  &--fade { animation: shield-fade 0.6s ease 0.5s forwards; }
+}
+
+@keyframes shield-fade {
+  to { opacity: 0; }
+}
+
+#grid-container {
+  position: relative;
+  width: min(92vw, 58vh, 720px);
+  padding: 16px;
+  background: var(--container-bg);
+  border: 1px solid var(--container-border);
+  border-radius: 24px;
+  box-shadow: var(--container-glow);
+  box-sizing: border-box;
+  transition: border-radius 0.2s ease;
+  overflow: hidden;
+
+  // Container radius follows the tile size for each difficulty
+  &[data-diff="easy"] { border-radius: 24px;padding: 16px;  }
+  &[data-diff="normal"]   { border-radius: 18px;padding: 12px;  }
+  &[data-diff="hard"]     { border-radius: 12px;padding: 10px;  }
+  &[data-diff="crazy"]  { border-radius: 8px;padding: 8px; }
+}
+
+#grid {
+  position: relative; // sit above the cream layer
+  display: grid;
+  width: 100%;
+  aspect-ratio: 1;
+  gap: 1px;
+  touch-action: none; // let a finger drag mark cells instead of scrolling the page
+  transition: filter 0.3s ease, opacity 0.3s ease;
+
+  // Puzzle finished: blur the board and stop it taking input
+  &.is-blurred {
+    filter: blur(7px);
+    opacity: 0.55;
+    pointer-events: none;
+    user-select: none;
+  }
+}
+
+// "Nice work!" banner: slides down from the top of the grid, then fades out as the Solved card fades in.
+// Timings come from render.js (WIN_BANNER_*), set as --win-slide / --win-fade.
+.win-banner {
+  position: absolute;
+  top: 12%;
+  left: 50%;
+  z-index: 6;
+  width: min(80%, 420px);
+  height: auto;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -250%);
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.35));
+
+  &.is-in {
+    opacity: 1;
+    transform: translate(-50%, 25%);
+    transition: transform var(--win-slide, 500ms) cubic-bezier(0.2, 1.2, 0.4, 1), opacity 0.15s ease;
+  }
+
+  &.is-in.is-out {
+    opacity: 0;
+    transition: opacity var(--win-fade, 400ms) ease;
+  }
+}
+
+// ---- Result overlay (win / lose) -------------------------------------------
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+
+  &[hidden] {
+    display: none;
+  }
+
+  // Completed daily: a large lock in the top-right corner, banner message in the middle
+  &__lock {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+    pointer-events: none;
+  }
+
+  &--locked { background: rgba(0, 0, 0, 0.18); }
+}
+
+// Daily reward picker
+.picks {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 4px 0 0;
+}
+
+.pick {
+  @include v.glossy;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 84px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  font-family: var(--font-body);
+  font-weight: 700;
+  cursor: pointer;
+
+  img { width: 44px; height: 44px; object-fit: contain; }
+}
+
+// Rewards shown for information only (Bonus card): just the power-up icons, no button styling, hover or press
+.pick-static img {
+  display: block;
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
+
+// "Powerups Earned" callout on the locked daily card: a tinted panel with a header and the earned icons
+.earned {
+  margin: 4px 0 0;
+  padding: 10px 14px 12px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: 16px;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0 0 8px;
+    font-family: var(--font-heading);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+
+    img { width: 28px; height: 28px; object-fit: contain; }
+  }
+
+  &__icons {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+
+    img { width: 52px; height: 52px; object-fit: contain; }
+  }
+}
+
+.result {
+  width: min(100%);
+  padding: 24px 16px;
+  text-align: center;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+  animation: result-in 0.28s ease both;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  &__eyebrow {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  &__title {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: clamp(1.6rem, 6vw, 2rem);
+    font-weight: 600;
+    line-height: 1.15;
+  }
+
+  &__text {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+
+  &__pill {
+    display: inline-block;
+    align-self: center;
+    padding: 5px 14px;
+    border-radius: 999px;
+    background: var(--success-bg);
+    color: var(--success-fg);
+    border: 1px solid var(--success-border);
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+
+    // Buttons share the row equally: one button fills it, two split it 50 / 50
+    button {
+      flex: 1 1 0;
+      min-width: 0;
+      width: auto;
+      padding: 12px 20px;
+    }
+  }
+
+  // Subtle text button under the actions ("Puzzles too easy? Try Normal.")
+  &__link {
+    align-self: center;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    padding: 4px 8px;
+    font: inherit;
+    font-size: 0.85rem;
+    color: var(--fg);
+    opacity: 0.65;
+    cursor: pointer;
+
+    &:hover, &:focus-visible { opacity: 1; }
+  }
+
+  // Secondary action: the regular glossy button (primary is the accent one)
+  &__alt {
+    @include v.glossy;
+  }
+
+  &--lost &__pill {
+    display: none;
+  }
+}
+
+// Angle of the rainbow gradient (registered so it can be animated)
+@property --hint-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes hint-spin {
+  to { --hint-angle: 360deg; }
+}
+
+@keyframes result-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result {
+    animation: none;
+  }
+}
+
+.cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(18px, 6vw, 32px);
+  color: #5a4a3d;
+  cursor: pointer;
+  border-radius: 12%; // scales with tile size; 44px would be a full circle at ~76px tiles
+
+  // Tactile "button" look, drawn entirely inside the tile so neighbors can touch.
+  // The region color (inline background-color) shows through the gradient.
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0) 45%,
+    rgba(0, 0, 0, 0.14) 100%
+  );
+  border: 2px solid color-mix(in srgb, var(--tile, #888) 86%, #000); // darkest point of the gradient (bottom: 14% black over the tile)
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.85);      // Top Highlight
+  transition: background-image 0.08s ease, box-shadow 0.08s ease, filter 0.08s ease;
+
+  &:hover {
+    filter: brightness(1.05);
+  }
+
+  // Hint: border in the opposite of the theme (dark on light, light on dark) and a soft rainbow glow behind the tile that spins.
+  // The glow (::before) is a blurred ROYGBIV gradient. To keep it behind the tile but above the neighbours, the tile's own
+  // face moves onto ::after (same color + shading), both stacked below the tile's content inside the tile's stacking context.
+  &.is-hint {
+    z-index: 1;
+    border-color: var(--fg);
+    background: transparent !important; // beats the inline region color; ::after paints it instead
+    box-shadow: none;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: -12px;
+      z-index: -2;
+      border-radius: 26%;
+      background: conic-gradient(from var(--hint-angle), #ff2d2d, #ff9500, #ffe600, #22d83a, #2d7bff, #4b2dd6, #b02dff, #ff2d2d);
+      filter: blur(8px);
+      opacity: 0.95;
+      pointer-events: none;
+      animation: hint-spin 3s linear infinite;
+    }
+
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      border-radius: inherit;
+      background-color: var(--tile);
+      background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 45%, rgba(0, 0, 0, 0.14) 100%);
+      box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.85);
+      pointer-events: none;
+    }
+  }
+
+  // Pressed: light and shadow swap so the tile looks pushed in. No movement.
+  // Driven by .is-pressed (set in input.js) because the grid is re-rendered on press, which resets :active.
+  &.is-pressed {
+    background-image: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.16) 0%,
+      rgba(0, 0, 0, 0) 55%,
+      rgba(255, 255, 255, 0.3) 100%
+    );
+    box-shadow:
+      inset 0 3px 4px rgba(1, 26, 74, 0.35),     // shadow cast from the top edge
+      inset 0 -1px 0 rgba(255, 255, 255, 0.5);   // faint lip highlight at the bottom
+  }
+
+  .mark {
+    width: 65%;
+    height: 65%;
+    object-fit: contain;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  &.cat {
+    color: #000;
+  }
+
+  // Region shape, centered behind the ✕ / paw (Color Blind mode only)
+  .shape {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 50%;
+    height: 50%;
+    transform: translate(-50%, -50%);
+    // A darker shade of the tile's own color: visible, but not harsh black
+    fill: color-mix(in srgb, var(--tile, #888) 45%, #000);
+    pointer-events: none;
+  }
+
+  .mark { position: relative; z-index: 1; } // marks stay on top of the shape
+}
+
+// ---- Accessibility: Color Blind mode ----------------------------------------
+// Tile colors stay as they are; each region also gets its own shape in the middle of the tile.
+html.cb-mode .cell .shape { display: block; }
+
+// Debossed look: the shape is pressed into the tile through an SVG lighting filter (#shape-deboss, defined at the
+// top of <body> in index.html). Only when the `deboss` class is on <html> (DEBOSS in render.js); set that to false
+// for flat shapes. Skipped in High Contrast mode, where the shape stays flat and bold.
+html.cb-mode.deboss:not(.hc-mode) .cell .shape {
+  fill: color-mix(in srgb, var(--tile, #888) 62%, #000); // a bit lighter so the shading has room to show
+  filter: url(#shape-deboss);
+}
+
+// ---- Accessibility: High Contrast mode --------------------------------------
+// Only the tile colors change: the regions swap to the high-contrast palette ($palette-hc in _variables.scss).
+html.hc-mode {
+  @for $i from 1 through list.length(v.$palette-hc) {
+    --palette-#{$i - 1}: #{list.nth(v.$palette-hc, $i)};
+  }
+  --palette-count: #{list.length(v.$palette-hc)};
+
+  // Solid dark edge so neighboring tiles stay separate
+  .cell { border: 2px solid #000; }
+}
+
+// Power-ups live in their own box: label (icon over text) on the left, the bubbles on the right
+.powerups-box {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 3vw, 16px);
+  width: min(92vw, 58vh, 720px); // same width as the board container
+  padding: 8px clamp(10px, 3vw, 16px);
+  box-sizing: border-box;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+
+  &__label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    flex: none;
+    font-family: var(--font-heading);
+    font-size: clamp(0.7rem, 2.6vw, 0.9rem);
+    font-weight: 500;
+    line-height: 1.1;
+    text-align: center;
+    color: var(--fg);
+
+    img { width: clamp(36px, 11vw, 64px); height: auto; }
+  }
+
+  position: relative;
+
+  // Tooltip shown inside the box when a Sweep / +Life that isn't needed is tapped.
+  // Same inverted look as the Share toast (dark in Light theme, light in Dark theme), without the close button.
+  &__tip {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 5;
+    width: 90%;
+    padding: 18px;
+    background: var(--fg);
+    color: var(--bg);
+    border: 1px solid color-mix(in srgb, var(--bg) 30%, transparent);
+    border-radius: 16px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+    font-family: var(--font-heading);
+    font-weight: 500;
+    text-align: center;
+    pointer-events: none;
+
+    opacity: 0;
+    transform: translate(-50%, -30%);
+    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    &.is-open { opacity: 1; transform: translate(-50%, -50%); }
+
+    // Power-up icon in the "No more ... available!" message
+    .tip-icon { height: 2.5em; vertical-align: middle; }
+
+    @media (prefers-reduced-motion: reduce) { transition: opacity 0.2s ease; transform: translate(-50%, -50%); }
+  }
+}
+
+// A power-up that isn't needed right now (Sweep with nothing to sweep, +Life at full hearts): grayed out like a
+// disabled button, but still tappable so it can explain itself
+.pu.is-unneeded {
+  opacity: 0.4;
+  cursor: default;
+
+  &,
+  &:hover:not(:disabled),
+  &:active:not(:disabled) {
+    filter: saturate(0.5);
+    transform: none;
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), 0 2px 0 var(--btn-lip);
+  }
+}
+
+// Desktop-only notice that slides down from the top (used after Share)
+.toast {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: min(92vw, 520px);
+  padding: 12px 14px 12px 18px;
+  // Inverted on purpose so it stands out: dark in Light theme, light in Dark theme
+  background: var(--fg);
+  color: var(--bg);
+  border: 1px solid color-mix(in srgb, var(--bg) 30%, transparent);
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+  font-family: var(--font-heading);
+  font-weight: 500;
+
+  // Closed: parked above the screen and faded out. Opening slides it down.
+  opacity: 0;
+  transform: translate(-50%, -140%);
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease;
+  &.is-open { opacity: 1; transform: translate(-50%, 0); }
+
+  &__close {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    background: transparent;
+    border-radius: 50%;
+    img { width: 20px; height: 20px; object-fit: contain; }
+    &:hover { background: color-mix(in srgb, var(--bg) 18%, transparent); }
+  }
+
+  @media (prefers-reduced-motion: reduce) { transition: opacity 0.2s ease; transform: translate(-50%, 0); }
+}
+
+// Row under the power-ups: Undo (always) and, in the daily, Leave Daily Challenge. Buttons share the row equally.
+.under-actions {
+  display: flex;
+  gap: 8px;
+  width: min(92vw, 58vh, 720px);
+}
+
+.under-btn {
+  @include v.glossy;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-family: var(--font-heading);
+  font-weight: 500;
+
+  img { width: 1.5em; height: 1.5em; object-fit: contain; }
+
+  // Leave: only shown in the daily (display:flex above would otherwise override [hidden])
+  &#leave-daily[hidden] { display: none; }
+
+  // Undo: always visible, dimmed and inert until there is an ✕ to take back
+  &#undo {
+    transition: opacity 0.3s ease;
+    &:disabled { opacity: 0.4; cursor: default; }
+  }
+}
+
+#bar {
+  display: flex;
+  flex: 1;
+  justify-content: space-evenly;
+  gap: clamp(8px, 3vw, 20px);
+  padding: 6px 0 10px; // room for the badges above and the lip below
+}
+
+// Power-up: a round glossy bubble with a count badge in the corner (Candy Crush style).
+// Colors come from the theme variables, so it swaps with Light / Dark like the other buttons.
+.pu {
+  @include v.glossy;
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: clamp(56px, 17vw, 76px);
+  aspect-ratio: 1;
+  padding: 0;
+  border-radius: 50%;
+  font-size: clamp(1.5rem, 6vw, 2rem);
+  line-height: 1;
+
+  &__icon {
+    width: 62%;
+    height: 62%;
+    object-fit: contain;
+    pointer-events: none;
+    filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.25));
+  }
+
+  &__emoji {
+    pointer-events: none;
+    filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.25));
+  }
+
+  // How many are left: a small accent bubble, top-left
+  &__count {
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    box-sizing: border-box;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background:
+      linear-gradient(180deg, var(--gloss-accent) 0%, rgba(255, 255, 255, 0) 55%),
+      var(--accent);
+    color: var(--accent-fg);
+    border: 2px solid var(--accent-edge);
+    box-shadow: 0 2px 0 var(--accent-lip);
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1;
+    pointer-events: none;
+  }
+}
+
+button {
+  font: inherit;
+  font-family: var(--font-heading);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: var(--btn);
+  color: var(--btn-fg);
+  cursor: pointer;
+
+  &.primary {
+    @include v.glossy-accent;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  &#share {
+    @include v.glossy(var(--share), var(--share-fg), var(--share-edge), var(--share-lip), var(--gloss-accent));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.help {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-align: center;
+  max-width: 420px;
+}
+
+// ---- How to Play modal (reuses the .result card look) ----------------------
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+
+  // Closed state: faded out and non-interactive (kept in the DOM so it can animate out)
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+
+  &.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity 0.25s ease, visibility 0s;
+  }
+
+  .result {
+    width: min(100%, 720px);
+    max-height: 90vh;
+    overflow-y: auto;
+
+
+    // Same motion as the result card, driven by transitions so it plays both ways
+    animation: none;
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  &.is-open .result {
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &, .result { transition: none; }
+  }
+
+  .result__text {
+    font-weight: 500;
+    line-height: 1.5;
+  }
+
+  .help-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+    text-align: left;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      line-height: 1.35;
+    }
+
+    img { width: 40px; height: 40px; object-fit: contain; flex: none; }
+    small { display: block; opacity: 0.75; }
+  }
+}
+
+// Small images sitting inline with text (e.g. in the How to Play copy)
+#help-modal .result__text { text-align: left; margin: 0; }
+
+// Update Notes modal (content lives in src/js/update-notes.js)
+.update-date {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--muted);
+
+  .inline-icon { height: 1.3em; }
+}
+
+.update-list {
+  margin: 0;
+  padding-left: 1.3em;
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.update-thanks { font-style: italic; }
+
+// Version number after "Paw Sweep" in Options' eyebrow. Looks like plain faded text; tapping it reopens the Update Notes
+.version-link {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: none;
+  color: var(--muted);
+  opacity: 0.6;
+  cursor: default;
+
+  &::before { content: "· "; }
+}
+
+.inline-icon {
+  display: inline-block;
+  height: 1.5em;
+  width: auto;
+  vertical-align: middle;
+}
+
+#next .inline-icon { height: 1em; }
+// ---- Level heading + difficulty selector -----------------------------------
+.level-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+
+  &__title {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: clamp(2rem, 7vw, 2.75rem);
+    line-height: 1.1;
+    color: var(--fg);
+
+    // Daily: calendar icon + "Daily Puzzle" on the left, a date tag after it
+    &.is-daily {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+    }
+  }
+
+  &__icon {
+    width: 1.1em;
+    height: 1.1em;
+    margin-right: -6px; // tightens the gap between the icon and the words
+    object-fit: contain;
+  }
+
+  // Not a button: a little "date stamp" / ticket. Dashed accent outline on a card face, set slightly askew,
+  // so it reads differently from the green timer pill and from the glossy buttons. Follows Light / Dark via the accent.
+  &__tag {
+    position: relative;
+    padding: 8px 12px;
+    border-radius: 12px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 60%),
+      var(--card);
+    color: var(--accent);
+    border: 2px dashed var(--accent);
+    outline: 2px solid var(--card); // thin gap between the dashes and the card edge
+    outline-offset: -5px;
+    box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 35%, transparent);
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    cursor: default;
+    user-select: none;
+    transform: rotate(-3deg);
+
+    // a small Font Awesome star (solid) that marks it as a special "today" stamp
+    &::before {
+      content: "";
+      display: inline-block;
+      width: 0.9em;
+      height: 0.9em;
+      margin-right: 7px;
+      vertical-align: -0.1em;
+      background: currentColor;
+      -webkit-mask: url("../icons/fa/star.svg") center / contain no-repeat;
+      mask: url("../icons/fa/star.svg") center / contain no-repeat;
+    }
+  }
+
+  &__note {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+
+    &:empty {
+      display: none;
+    }
+  }
+
+}
+
+// Difficulty + lives share one row, as wide as the board: difficulty left, lives right
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: min(92vw, 58vh, 720px);
+}
+
+.timer-pill {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  color: var(--success-fg);
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  height: stretch;
+  // Bubbly like the buttons, in green: gloss on top, darker edge, a lip underneath
+  border: 2px solid var(--success-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.14) 100%),
+    var(--success-bg);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.45),
+    0 2px 0 color-mix(in srgb, var(--success-border) 70%, #000);
+
+  &__icon {
+    display: block;
+    width: 1.5em;
+    height: 1.5em;
+    object-fit: contain;
+  }
+}
+
+// Difficulty dropdown: a glossy bubble button that opens a list of glossy options
+.diff-menu {
+  position: relative;
+  flex: none;
+
+  &__btn {
+    @include v.glossy;
+    // Dimensions match .theme-menu__btn; only the finish is glossy
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-family: var(--font-heading);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  &__chevron { transition: transform 0.25s ease; }
+  &.is-open &__chevron { transform: rotate(180deg); }
+
+  &__list {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 30;
+    display: grid;
+    gap: 8px;
+    width: min(50vw, 250px);
+    padding: 8px;
+    background: var(--card);
+    border: 1px solid var(--btn-edge);
+    border-radius: 16px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
+
+    button {
+      @include v.glossy;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-family: var(--font-heading);
+      font-weight: 500;
+      white-space: nowrap;
+      text-align: left;
+      margin-bottom: 3px;
+
+      // The current difficulty stays pushed in, accent colored
+      &.is-active { @include v.glossy-selected; }
+
+      // Daily: lock / checkmark badge on the right, locked ones are dimmed and can't be picked
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      .diff-state { width: 1.2em; height: 1.2em; object-fit: contain; flex: none; }
+      &.is-locked { opacity: 0.6; cursor: not-allowed; }
+    }
+  }
+
+  &.is-open &__list {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &__list, &__chevron { transition: none; }
+  }
+}
+// Expose the palette as CSS custom properties; JS reads these to color the tiles
+:root {
+  --palette-count: #{list.length(v.$palette)};
+  @for $i from 1 through list.length(v.$palette) {
+    --palette-#{$i - 1}: #{list.nth(v.$palette, $i)};
+  }
+}
+
+// Alternate palettes, chosen in Options. High Contrast mode still wins when it is on.
+@each $name, $colors in (
+  pastel: v.$palette-pastel,
+  vibrant: v.$palette-vibrant,
+  warm: v.$palette-warm,
+  cool: v.$palette-cool,
+  easter: v.$palette-easter,
+  valentine: v.$palette-valentine,
+  halloween: v.$palette-halloween,
+  thanksgiving: v.$palette-thanksgiving,
+  christmas: v.$palette-christmas
+) {
+  html[data-palette="#{$name}"]:not(.hc-mode) {
+    @for $i from 1 through list.length($colors) {
+      --palette-#{$i - 1}: #{list.nth($colors, $i)};
+    }
+  }
+}
