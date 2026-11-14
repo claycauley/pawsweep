@@ -8,14 +8,13 @@
 //   "Added the Shield <img class='inline-icon' src='src/imgs/icons/shield.webp' alt=''> power-up."
 
 export const UPDATE_NOTES = {
-  version: "0.1.1",
-  date: "November 13, 2026",
+  version: "0.1.2",
+  date: "November 14, 2026",
   changes: [
-    "Meet your new power up, <strong>Shield</strong> <img class='inline-icon' src='src/imgs/icons/shield.webp' alt=''>. It blocks your next 2 wrong paw placements.",
-    "The <strong>Hint</strong> <img class='inline-icon' src='src/imgs/icons/hint.webp' alt=''> no longer places the correct paw for you. Don't worry, it's not that bad. I think it's cooler.",
-    "Placing a correct <strong>Paw</strong> <img class='inline-icon' src='src/imgs/icons/paw-print.webp' alt=''> will now automatically <img class='inline-icon' src='src/imgs/icons/cross-mark.webp' alt=''> all ruled out tiles. No more manually trying to tap tiny tiles.",
-    "Updated icons.",
-    "Reworked win screen so you don't accidentally tap a random button after placing the last paw."
+    "Updated the rainbow glow effect on hinted tiles so they hopefully stand out more.",
+    "Updated the <strong>Share</strong> text link to reflect the new website.",
+    "Updated older icons to fit in with the newer style.",
+    "Updated PWA icon for Android and iOS.",
   ],
 };
 

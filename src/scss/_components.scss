@@ -373,12 +373,12 @@ button .heart {
     &::before {
       content: "";
       position: absolute;
-      inset: -12px;
+      inset: -16px;
       z-index: -2;
-      border-radius: 26%;
+      border-radius: 32px;
       background: conic-gradient(from var(--hint-angle), #ff2d2d, #ff9500, #ffe600, #22d83a, #2d7bff, #4b2dd6, #b02dff, #ff2d2d);
-      filter: blur(8px);
-      opacity: 0.95;
+      filter: blur(12px);
+      opacity: 1;
       pointer-events: none;
       animation: hint-spin 3s linear infinite;
     }

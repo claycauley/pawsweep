@@ -2,7 +2,7 @@ import { state, DIFFICULTIES } from "./state.js";
 
 // Share a finished puzzle: an image of the UNSOLVED board (slightly blurred, logo on top) plus a message and link.
 // The image always uses the Default palette, light look and no Color Blind shapes, whatever the player has set.
-export const SHARE_URL = "https://claydesigns.cc/game";
+export const SHARE_URL = "https://pawsweep.app";
 
 // Keep in sync with $palette in _variables.scss (the Default palette)
 const DEFAULT_PALETTE = ["#ffb86b", "#b9e769", "#6fdcf0", "#b39cff", "#ff8a80", "#fff176", "#7fb2ff", "#ff9ee0", "#62dfb4", "#d2a679"];
