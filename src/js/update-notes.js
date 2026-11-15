@@ -8,13 +8,14 @@
 //   "Added the Shield <img class='inline-icon' src='src/imgs/icons/shield.webp' alt=''> power-up."
 
 export const UPDATE_NOTES = {
-  version: "0.1.2",
+  version: "0.1.2a",
   date: "November 14, 2026",
   changes: [
     "Updated the rainbow glow effect on hinted tiles so they hopefully stand out more.",
     "Updated the <strong>Share</strong> text link to reflect the new website.",
     "Updated older icons to fit in with the newer style.",
     "Updated PWA icon for Android and iOS.",
+    "Shiny new logo!",
   ],
 };
 
