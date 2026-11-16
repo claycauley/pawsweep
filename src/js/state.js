@@ -40,16 +40,17 @@ export const dailyUnlocked = diff => {
   return i <= 0 || dailyDone(dailyKeys()[i - 1]);
 };
 export const anyDailyDone = () => dailyKeys().some(dailyDone);
+export const allDailiesDone = () => dailyKeys().every(dailyDone);
 export const nextDailyDiff = () => dailyKeys()[dailyKeys().indexOf(state.difficulty) + 1];
 // Power-ups picked for a completed daily: easy / normal give 1, hard / crazy give 2
 export const DAILY_PICKS = { easy: 1, normal: 1, hard: 2, crazy: 2 };
 
 // Difficulty setting -> grid size
 export const DIFFICULTIES = {
-  easy: { label: "Easy", n: 5, lives: 5 },
-  normal: { label: "Normal", n: 6, lives: 5 },
+  easy: { label: "Easy", n: 5, lives: 3 },
+  normal: { label: "Normal", n: 6, lives: 3 },
   hard: { label: "Hard", n: 8, lives: 3 },
-  crazy: { label: "Wicked", n: 10, lives: 3 }, // key stays "crazy" so saved progress carries over
+  crazy: { label: "Crazy", n: 10, lives: 3 },
 };
 // Starting hearts depend on the difficulty
 export const startLives = () => DIFFICULTIES[state.difficulty].lives;
@@ -286,8 +287,8 @@ export function placeCat(r, c) {
   clearHintAt(r, c);
   if (state.puzzle.sol[r] === c) {
     state.board[r][c] = 2; state.undo = [];
-    // TEST: auto-cross every tile this paw rules out
-    for (const [i, j] of sweepTargets()) state.board[i][j] = 1;
+    // Auto-cross every tile this paw rules out (Options > Accessibility > Auto Eliminate Empty Tiles, on by default)
+    if (localStorage.getItem("paw-sweep-auto-x") !== "off") for (const [i, j] of sweepTargets()) state.board[i][j] = 1;
     checkWin();
   }
   else if (state.shield > 0) {

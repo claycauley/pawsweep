@@ -112,6 +112,14 @@ $breakpoint: 760px;
       object-fit: contain;
     }
 
+    // "All dailies complete" badge at the end of the button
+    &-done {
+      width: 1.5em;
+      height: 1.5em;
+      object-fit: contain;
+      margin-left: auto; // pushed to the far right of the button
+    }
+
     &:hover,
     &:focus-visible {
       background:

@@ -76,9 +76,12 @@ export function setupInput() {
     e.target.releasePointerCapture?.(e.pointerId);
 
     const [r, c] = coords(el), now = performance.now();
+    if (state.board[r][c] === 2) return; // a correctly placed paw is disabled
 
     // Second press on the same cell soon after the first = double tap: place a paw.
-    if (lastTap && lastTap.r === r && lastTap.c === c && now - lastTap.t < DOUBLE_TAP_MS) {
+    // A single tap on the hinted tile counts as a double tap too.
+    const hinted = state.hint && state.hint[0] === r && state.hint[1] === c;
+    if (hinted || (lastTap && lastTap.r === r && lastTap.c === c && now - lastTap.t < DOUBLE_TAP_MS)) {
       lastTap = null; dragging = false;
       const livesBefore = state.lives, shieldBefore = state.shield, alreadyPaw = state.board[r][c] === 2;
       place(r, c); render(); press(r, c);

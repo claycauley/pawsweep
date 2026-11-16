@@ -1,7 +1,7 @@
 // Tile color palette (Options > Theme > Color Palette). Applied as data-palette on <html>;
 // the CSS swaps the --palette-N variables, so no re-render is needed. "default" removes the attribute.
 const KEY = "paw-sweep-palette";
-const CHOICES = ["default", "pastel", "vibrant", "warm", "cool", "easter", "valentine", "halloween", "thanksgiving", "christmas"];
+const CHOICES = ["default", "pastel", "vibrant", "warm", "cool", "easter", "valentine", "halloween", "thanksgiving", "christmas", "bleak"];
 
 export function setupPalette() {
   const root = document.documentElement;

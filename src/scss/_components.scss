@@ -398,7 +398,9 @@ button .heart {
 
   // Pressed: light and shadow swap so the tile looks pushed in. No movement.
   // Driven by .is-pressed (set in input.js) because the grid is re-rendered on press, which resets :active.
-  &.is-pressed {
+  // .is-marked (set in render.js) keeps the same look on tiles holding a ✕ or a paw.
+  &.is-pressed,
+  &.is-marked {
     background-image: linear-gradient(
       180deg,
       rgba(0, 0, 0, 0.16) 0%,
@@ -420,6 +422,8 @@ button .heart {
 
   &.cat {
     color: #000;
+    cursor: default; // a placed paw is final: no input, no hover lift
+    &:hover { filter: none; }
   }
 
   // Region shape, centered behind the ✕ / paw (Color Blind mode only)
@@ -988,17 +992,17 @@ button {
 
   &__list {
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 12px);
     left: 0;
     z-index: 30;
     display: grid;
     gap: 8px;
-    width: min(50vw, 250px);
+    width: min(50vw, 300px);
     padding: 8px;
     background: var(--card);
     border: 1px solid var(--btn-edge);
     border-radius: 16px;
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.75);
 
     opacity: 0;
     visibility: hidden;
@@ -1024,6 +1028,8 @@ button {
       justify-content: space-between;
       gap: 12px;
       .diff-state { width: 1.2em; height: 1.2em; object-fit: contain; flex: none; }
+      // Levels cleared, e.g. "3/100", pushed to the right
+      .diff-count { margin-left: auto; font-size: 0.8em; opacity: 0.7; font-variant-numeric: tabular-nums; }
       &.is-locked { opacity: 0.6; cursor: not-allowed; }
     }
   }
@@ -1057,7 +1063,8 @@ button {
   valentine: v.$palette-valentine,
   halloween: v.$palette-halloween,
   thanksgiving: v.$palette-thanksgiving,
-  christmas: v.$palette-christmas
+  christmas: v.$palette-christmas,
+  bleak: v.$palette-bleak
 ) {
   html[data-palette="#{$name}"]:not(.hc-mode) {
     @for $i from 1 through list.length($colors) {

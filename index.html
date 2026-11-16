@@ -134,7 +134,7 @@
       <button type="button" role="option" data-diff="easy">Easy</button>
       <button type="button" role="option" data-diff="normal">Normal</button>
       <button type="button" role="option" data-diff="hard">Hard</button>
-      <button type="button" role="option" data-diff="crazy">Wicked</button>
+      <button type="button" role="option" data-diff="crazy">Crazy</button>
     </div>
   </div>
   <div id="lives"></div>
@@ -227,12 +227,16 @@
     <section class="opt-section" aria-labelledby="opt-access-title">
       <h4 class="opt-section__title" id="opt-access-title"><img class="opt-section__icon" src="src/imgs/icons/accessibility.webp" alt="">Accessibility</h4>
       <div class="opt-row">
-        <span class="opt-row__label" id="cb-label-modal">Color Blind Mode</span>
+        <span class="opt-row__label" id="cb-label-modal">Shape Overlays</span>
         <button type="button" class="music-toggle" role="switch" aria-checked="false" aria-labelledby="cb-label-modal" data-a11y-toggle="colorblind"><span class="music-toggle__text music-toggle__text--on">On</span><span class="music-toggle__text music-toggle__text--off">Off</span><img class="music-toggle__knob" src="src/imgs/icons/toggle.webp" alt=""></button>
       </div>
       <div class="opt-row">
         <span class="opt-row__label" id="hc-label-modal">High Contrast Tiles</span>
         <button type="button" class="music-toggle" role="switch" aria-checked="false" aria-labelledby="hc-label-modal" data-a11y-toggle="contrast"><span class="music-toggle__text music-toggle__text--on">On</span><span class="music-toggle__text music-toggle__text--off">Off</span><img class="music-toggle__knob" src="src/imgs/icons/toggle.webp" alt=""></button>
+      </div>
+      <div class="opt-row">
+        <span class="opt-row__label" id="ax-label-modal">Auto Eliminate Empty Tiles</span>
+        <button type="button" class="music-toggle" role="switch" aria-checked="true" aria-labelledby="ax-label-modal" data-a11y-toggle="autox"><span class="music-toggle__text music-toggle__text--on">On</span><span class="music-toggle__text music-toggle__text--off">Off</span><img class="music-toggle__knob" src="src/imgs/icons/toggle.webp" alt=""></button>
       </div>
     </section>
     <section class="opt-section" aria-labelledby="opt-theme-title">
@@ -259,6 +263,7 @@
             <button type="button" role="option" aria-selected="false" data-palette-choice="halloween">Halloween</button>
             <button type="button" role="option" aria-selected="false" data-palette-choice="thanksgiving">Thanksgiving</button>
             <button type="button" role="option" aria-selected="false" data-palette-choice="christmas">Christmas</button>
+            <button type="button" role="option" aria-selected="false" data-palette-choice="bleak">Bleak</button>
           </div>
         </div>
       </div>

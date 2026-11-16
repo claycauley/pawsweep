@@ -2,7 +2,7 @@ import { paletteColor } from "./rng.js";
 import { SHAPES } from "./shapes.js";
 import { prepareShare, shareResult } from "./share.js";
 import { playSfx } from "./music.js";
-import { state, DIFFICULTIES, startLives, newLevel, newDaily, advanceLevel, setDifficulty, useHint, useShield, endShatter, useLife, canLife, dailyDone, dailyPicked, dailyUnlocked, pickPower, exitDaily, nextDaily, savePowers, ackBonus } from "./state.js";
+import { state, DIFFICULTIES, startLives, clearedCount, levelCount, newLevel, newDaily, advanceLevel, setDifficulty, useHint, useShield, endShatter, useLife, canLife, dailyDone, allDailiesDone, dailyPicked, dailyUnlocked, pickPower, exitDaily, nextDaily, savePowers, ackBonus } from "./state.js";
 
 export const $ = id => document.getElementById(id);
 
@@ -74,11 +74,18 @@ export function render() {
     const lockedDiff = isDaily && !dailyUnlocked(k);
     const icon = !isDaily ? "" : dailyDone(k) ? "checkmark" : lockedDiff ? "lock" : "";
     b.querySelector(".diff-state")?.remove();
+    b.querySelector(".diff-count")?.remove();
+    // Regular play: levels cleared out of the total, tucked on the right (like "3/100" in the level select)
+    if (!isDaily) b.insertAdjacentHTML("beforeend", `<span class="diff-count">${clearedCount(k)}/${levelCount(k)}</span>`);
     if (icon) b.insertAdjacentHTML("beforeend", `<img class="diff-state" src="src/imgs/icons/${icon}.webp" alt="${icon === "lock" ? "locked" : "completed"}">`);
     b.disabled = lockedDiff;
     b.classList.toggle("is-locked", lockedDiff);
   });
   $("diff-current").textContent = DIFFICULTIES[state.difficulty].label;
+  // Daily button in the menu: a "complete" badge at the end once every daily is done today
+  const dailyLink = $("daily"), allDone = allDailiesDone(), badge = dailyLink?.querySelector(".site-nav__daily-done");
+  if (dailyLink && allDone && !badge) dailyLink.insertAdjacentHTML("beforeend", `<img class="site-nav__daily-done" src="src/imgs/icons/complete.webp" alt="All dailies complete">`);
+  else if (dailyLink && !allDone && badge) badge.remove();
   const heart = (cls = "", img = "heart") => `<img class="heart${cls}" src="src/imgs/icons/${img}.webp" alt="">`;
   const lostHeart = () => heart(" heart--lost", "broken-heart");
   // The shield sits over the first full heart: whole -> broken (heart visible through it) -> shattered, then fades away
@@ -110,7 +117,7 @@ export function render() {
     let html = "";
     for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
       const v = state.board[r][c];
-      html += `<div class="cell${v === 2 ? " cat" : ""}" data-r="${r}" data-c="${c}" style="background-color:${paletteColor(reg[r][c])};--tile:${paletteColor(reg[r][c])}">${tileInner(v, r, c)}</div>`;
+      html += `<div class="cell${v === 2 ? " cat" : ""}${v === 1 || v === 2 ? " is-marked" : ""}" data-r="${r}" data-c="${c}" style="background-color:${paletteColor(reg[r][c])};--tile:${paletteColor(reg[r][c])}">${tileInner(v, r, c)}</div>`;
     }
     g.innerHTML = html;
     drawn = { puzzle: state.puzzle, cells: [...g.children], vals: Array(n * n).fill(0).map((_, i) => state.board[Math.floor(i / n)][i % n]) };
@@ -123,6 +130,7 @@ export function render() {
       drawn.vals[i] = v;
       const el = drawn.cells[i];
       el.classList.toggle("cat", v === 2);
+      el.classList.toggle("is-marked", v === 1 || v === 2); // ✕ and paw tiles keep the pressed-in look (? does not)
       el.innerHTML = tileInner(v, r, c);
     }
   }

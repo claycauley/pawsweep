@@ -23,6 +23,9 @@ $palette-thanksgiving: #e8791d, #d9a521, #8c2f39, #7a8b3a, #7b4b2a, #c2294a, #f3
 //                 red      green    gold     snow     silver   pine     coral    lime     ice      burgundy
 $palette-christmas: #d32f2f, #2e7d32, #ffc107, #eef6fb, #b0bec5, #00796b, #ff7a6b, #8bc34a, #81d4fa, #8e1b2a;
 
+// Bleak: black, white and shades of gray only. Deliberately hard (neighbouring regions can be close in lightness).
+$palette-bleak: #f2f2f2, #d6d6d6, #bbbbbb, #a0a0a0, #868686, #6d6d6d, #555555, #3e3e3e, #292929, #171717;
+
 // High Contrast mode palette: fully saturated colors that differ strongly in hue AND lightness.
 // Must have the same number of colors as $palette.
 //            yellow   blue     red      white    green    purple   orange   lime     cyan     magenta
