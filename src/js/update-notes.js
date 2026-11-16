@@ -8,7 +8,7 @@
 //   "Added the Shield <img class='inline-icon' src='src/imgs/icons/shield.webp' alt=''> power-up."
 
 export const UPDATE_NOTES = {
-  version: "0.1.3",
+  version: "0.1.3a",
   date: "November 16, 2026",
   changes: [
     "Levels you've completed are shown in the difficulty select menu.",
