@@ -44,8 +44,12 @@ $("play").onclick = e => {
   render();
 };
 
-// Undo the last ✕ tap / drag
-$("undo").onclick = () => { if (undo()) playSfx("src/sfx/undo.mp3"); render(); };
+// Undo the last ✕ tap / drag (the button lives in the power-up bar, which is rebuilt on every render, so listen on the bar)
+$("bar").addEventListener("click", e => {
+  if (!e.target.closest("#undo")) return;
+  if (undo()) playSfx("src/sfx/undo.mp3");
+  render();
+});
 
 // Mobile: button under the power-ups that leaves the daily (same as Play)
 $("leave-daily").onclick = () => { if (state.mode === "daily") { exitDaily(); render(); } };

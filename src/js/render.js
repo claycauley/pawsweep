@@ -2,7 +2,7 @@ import { paletteColor } from "./rng.js";
 import { SHAPES } from "./shapes.js";
 import { prepareShare, shareResult } from "./share.js";
 import { playSfx } from "./music.js";
-import { state, DIFFICULTIES, startLives, clearedCount, levelCount, newLevel, newDaily, advanceLevel, setDifficulty, useHint, useShield, endShatter, useLife, canLife, dailyDone, allDailiesDone, dailyPicked, dailyUnlocked, pickPower, exitDaily, nextDaily, savePowers, ackBonus } from "./state.js";
+import { state, DIFFICULTIES, startLives, clearedCount, levelCount, newLevel, newDaily, advanceLevel, setDifficulty, useHint, useShield, endShatter, useLife, canLife, atMax, dailyDone, allDailiesDone, dailyPicked, dailyUnlocked, pickPower, exitDaily, nextDaily, savePowers, ackBonus } from "./state.js";
 
 export const $ = id => document.getElementById(id);
 
@@ -52,8 +52,9 @@ function dailyTitleHTML(key) {
 
 // Undo button: always shown, disabled while there is no ✕ to take back
 export function renderUndo() {
-  $("undo").disabled = !state.undo?.length || state.won || state.lost;
+  $("undo") && ($("undo").disabled = undoOff());
 }
+const undoOff = () => !state.undo?.length || state.won || state.lost;
 
 export function render() {
   savePowers(); // every change to the power-up counts ends in a render, so this keeps them saved
@@ -190,10 +191,14 @@ export function render() {
     const unneeded = empty || (!ended && !locked && left > 0 && (p.id === "b2" ? state.shield > 0 : p.id === "b3" ? !canLife() : !!state.hint));
     const off = ended || locked ? "disabled" : "";
     return `<button type="button" id="${p.id}" class="pu${unneeded ? " is-unneeded" : ""}" ${off}${unneeded ? ' aria-disabled="true"' : ""} aria-label="${p.label}, ${left} left" title="${p.label}">` +
-      puIcon(p, left) + `<span class="pu__count" aria-hidden="true">${left}</span></button>`;
-  }).join("");
+      puIcon(p, left) + `<span class="pu__count" aria-hidden="true">${left}</span>${atMax(p.stat) ? `<span class="pu__max" aria-hidden="true">MAX</span>` : ""}</button>`;
+  }).join("") +
+    // Undo: always last in the bar, no count. Dimmed and inert until there is an ✕ to take back.
+    `<button type="button" id="undo" class="pu pu--undo" aria-label="Undo last ✕" title="Undo"${undoOff() ? " disabled" : ""}>` +
+      `<img class="pu__icon" src="src/imgs/icons/undo.webp" alt=""></button>`;
   bar.querySelectorAll("img.pu__icon:not(.pu__icon--lock)").forEach(img => img.addEventListener("error", () => {
     const p = POWERUPS.find(x => x.id === img.closest(".pu").id);
+    if (!p) return;
     brokenIcons.add(p.id);
     img.replaceWith(Object.assign(document.createElement("span"), { className: "pu__emoji", textContent: p.emoji }));
   }));
@@ -270,7 +275,7 @@ function renderResult(overlay) {
       const n = state.dailyPicks;
       card("Daily complete", "Pick a power up", `Choose ${n} bonus power up${n > 1 ? "s" : ""}.`,
         `<div class="picks">` + POWERUPS.map(p =>
-          `<button type="button" class="pick" data-stat="${p.stat}"><img src="${p.src}" alt=""><span>${p.label}</span></button>`).join("") + `</div>`);
+          `<button type="button" class="pick" data-stat="${p.stat}"${atMax(p.stat) && !POWERUPS.every(q => atMax(q.stat)) ? " disabled" : ""}><img src="${p.src}" alt=""><span>${atMax(p.stat) ? "MAX" : p.label}</span></button>`).join("") + `</div>`);
       overlay.querySelectorAll(".pick").forEach(b => b.onclick = () => {
         if (!resultReady()) return;
         pickPower(b.dataset.stat); render();

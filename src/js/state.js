@@ -8,6 +8,13 @@ export const REWARDS = [
   { every: 5,  stat: "shields", label: "shield" },
   { every: 10, stat: "extra",  label: "extra life" },
 ];
+// Power-ups can't be stockpiled past this (edit here to change the cap)
+export const MAX_POWERUPS = 15;
+export const atMax = stat => state[stat] >= MAX_POWERUPS;
+const allAtMax = () => REWARDS.every(r => atMax(r.stat));
+// Give one of a power-up unless it's already at the cap. Returns whether it was given.
+const grant = stat => { if (atMax(stat)) return false; state[stat]++; return true; };
+
 // Power-up counts and which levels already paid out their reward are kept on this device
 const POWERS_KEY = "paw-sweep-powerups";
 const REWARDED_KEY = "paw-sweep-rewarded";
@@ -15,7 +22,7 @@ const readJSON = (key, fallback) => { try { return JSON.parse(localStorage.getIt
 const rewarded = new Set(readJSON(REWARDED_KEY, []));
 const savedPowers = readJSON(POWERS_KEY, {});
 savedPowers.shields ??= savedPowers.sweeps; // Shield replaced Sweep: saved Sweeps carry over as Shields
-const powerCount = (stat) => Number.isInteger(savedPowers[stat]) && savedPowers[stat] >= 0 ? savedPowers[stat] : 5; // new players start with 5
+const powerCount = (stat) => Math.min(MAX_POWERUPS, Number.isInteger(savedPowers[stat]) && savedPowers[stat] >= 0 ? savedPowers[stat] : 5); // new players start with 5
 export function savePowers() {
   localStorage.setItem(POWERS_KEY, JSON.stringify({ hints: state.hints, shields: state.shields, extra: state.extra }));
   localStorage.setItem(REWARDED_KEY, JSON.stringify([...rewarded]));
@@ -167,7 +174,9 @@ export function undo() {
 export function pickPower(stat) {
   if (state.dailyPicks <= 0) return;
   const r = REWARDS.find(x => x.stat === stat);
-  state[stat]++; state.dailyPicks--; state.earned.push(r.label);
+  if (atMax(stat) && !allAtMax()) return; // pick something that isn't full (if everything is full, the pick is just used up)
+  if (grant(stat)) state.earned.push(r.label);
+  state.dailyPicks--;
   // Remember which power ups this daily gave, so the locked daily can show them later
   const d = loadDaily();
   d.picked ??= {};
@@ -263,7 +272,7 @@ export function checkWin() {
       state.dailyPicks = DAILY_PICKS[state.difficulty];
       if (!d.bonus && Object.keys(DIFFICULTIES).every(k => d.done[k])) {
         d.bonus = true; state.dailyBonus = true;
-        for (const r of REWARDS) state[r.stat]++;
+        for (const r of REWARDS) grant(r.stat);
       }
       // Remember what's still to be claimed, so the reward card comes back after a reload
       d.pending = { diff: state.difficulty, picks: state.dailyPicks, bonus: state.dailyBonus };
@@ -278,7 +287,7 @@ export function checkWin() {
   if (state.mode === "level" && !rewarded.has(key)) {
     rewarded.add(key);
     for (const r of REWARDS) {
-      if (state.level % r.every === 0) { state[r.stat]++; state.earned.push(r.label); }
+      if (state.level % r.every === 0 && grant(r.stat)) state.earned.push(r.label);
     }
   }
 }

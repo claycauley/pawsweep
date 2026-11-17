@@ -350,11 +350,11 @@ button .heart {
     180deg,
     rgba(255, 255, 255, 0.55) 0%,
     rgba(255, 255, 255, 0) 45%,
-    rgba(0, 0, 0, 0.14) 100%
+    rgba(0, 0, 0, 0.25) 100%
   );
   border: 2px solid color-mix(in srgb, var(--tile, #888) 86%, #000); // darkest point of the gradient (bottom: 14% black over the tile)
   box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.85);      // Top Highlight
+    inset 0 2px 0 rgba(255, 255, 255, 0.5);      // Top Highlight
   transition: background-image 0.08s ease, box-shadow 0.08s ease, filter 0.08s ease;
 
   &:hover {
@@ -390,7 +390,12 @@ button .heart {
       z-index: -1;
       border-radius: inherit;
       background-color: var(--tile);
-      background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 45%, rgba(0, 0, 0, 0.14) 100%);
+      background-image: linear-gradient(
+        180deg, 
+        rgba(255, 255, 255, 0.55) 0%, 
+        rgba(255, 255, 255, 0) 45%, 
+        rgba(0, 0, 0, 0.15) 100%
+      );
       box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.85);
       pointer-events: none;
     }
@@ -403,9 +408,9 @@ button .heart {
   &.is-marked {
     background-image: linear-gradient(
       180deg,
-      rgba(0, 0, 0, 0.16) 0%,
+      rgba(0, 0, 0, 0.5) 0%,
       rgba(0, 0, 0, 0) 55%,
-      rgba(255, 255, 255, 0.3) 100%
+      rgba(255, 255, 255, .5) 100%
     );
     box-shadow:
       inset 0 3px 4px rgba(1, 26, 74, 0.35),     // shadow cast from the top edge
@@ -486,6 +491,9 @@ html.hc-mode {
     align-items: center;
     gap: 2px;
     flex: none;
+
+    // Phones: no label, the bubbles get the whole box
+    @media (max-width: 760px) { display: none; }
     font-family: var(--font-heading);
     font-size: clamp(0.7rem, 2.6vw, 0.9rem);
     font-weight: 500;
@@ -610,12 +618,6 @@ html.hc-mode {
 
   // Leave: only shown in the daily (display:flex above would otherwise override [hidden])
   &#leave-daily[hidden] { display: none; }
-
-  // Undo: always visible, dimmed and inert until there is an ✕ to take back
-  &#undo {
-    transition: opacity 0.3s ease;
-    &:disabled { opacity: 0.4; cursor: default; }
-  }
 }
 
 #bar {
@@ -623,7 +625,7 @@ html.hc-mode {
   flex: 1;
   justify-content: space-evenly;
   gap: clamp(8px, 3vw, 20px);
-  padding: 6px 0 10px; // room for the badges above and the lip below
+  padding: 6px 0 18px; // room for the badges above and the lip + MAX label below
 }
 
 // Power-up: a round glossy bubble with a count badge in the corner (Candy Crush style).
@@ -634,12 +636,15 @@ html.hc-mode {
   display: grid;
   place-items: center;
   flex: none;
-  width: clamp(56px, 17vw, 76px);
+  width: clamp(50px, 15vw, 76px); // four bubbles (shield, life, hint, undo) have to fit the box on small phones
   aspect-ratio: 1;
   padding: 0;
   border-radius: 50%;
   font-size: clamp(1.5rem, 6vw, 2rem);
   line-height: 1;
+
+  // Undo bubble: no count; dimmed and inert until there is an ✕ to take back
+  &--undo { transition: opacity 0.3s ease; }
 
   &__icon {
     width: 62%;
@@ -652,6 +657,21 @@ html.hc-mode {
   &__emoji {
     pointer-events: none;
     filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.25));
+  }
+
+  // "MAX" under the bubble when the stock is full
+  &__max {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translate(-50%, 4px);
+    font-family: var(--font-heading);
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    color: var(--fg);
+    pointer-events: none;
   }
 
   // How many are left: a small accent bubble, top-left
