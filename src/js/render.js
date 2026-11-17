@@ -44,10 +44,14 @@ const LOSS_MESSAGES = [
 
 // dailyKey is "YYYY-MM-DD" from the player's own clock (no location needed).
 // The tag shows the date in the player's own format (11/7/2026 in the US, 7/11/2026 in the UK).
-function dailyTitleHTML(key) {
+function dailyTitleHTML(key, done = false) {
   const [y, m, d] = key.split("-").map(Number);
   const date = new Date(y, m - 1, d).toLocaleDateString(undefined, { year: "numeric", month: "numeric", day: "numeric" });
-  return `<img class="level-head__icon" src="src/imgs/icons/calendar.webp" alt=""><span>Daily Puzzle</span><time class="level-head__tag" datetime="${key}">${date}</time>`;
+  // A finished daily swaps the date stamp for the complete badge
+  const tag = done
+    ? `<img class="level-head__badge" src="src/imgs/complete-badge.webp" alt="Complete">`
+    : `<time class="level-head__tag" datetime="${key}">${date}</time>`;
+  return `<img class="level-head__icon" src="src/imgs/icons/calendar.webp" alt=""><span>Daily Puzzle</span>${tag}`;
 }
 
 // Undo button: always shown, disabled while there is no ✕ to take back
@@ -60,7 +64,7 @@ export function render() {
   savePowers(); // every change to the power-up counts ends in a render, so this keeps them saved
   const { n, regions: reg } = state.puzzle;
   const title = $("level-title");
-  if (state.mode === "daily") title.innerHTML = dailyTitleHTML(state.dailyKey);
+  if (state.mode === "daily") title.innerHTML = dailyTitleHTML(state.dailyKey, dailyDone(state.difficulty));
   else title.textContent = "Level " + state.level;
   title.classList.toggle("is-daily", state.mode === "daily");
   $("leave-daily").hidden = state.mode !== "daily";
@@ -85,7 +89,7 @@ export function render() {
   $("diff-current").textContent = DIFFICULTIES[state.difficulty].label;
   // Daily button in the menu: a "complete" badge at the end once every daily is done today
   const dailyLink = $("daily"), allDone = allDailiesDone(), badge = dailyLink?.querySelector(".site-nav__daily-done");
-  if (dailyLink && allDone && !badge) dailyLink.insertAdjacentHTML("beforeend", `<img class="site-nav__daily-done" src="src/imgs/icons/complete.webp" alt="All dailies complete">`);
+  if (dailyLink && allDone && !badge) dailyLink.insertAdjacentHTML("beforeend", `<img class="site-nav__daily-done" src="src/imgs/complete-badge.webp" alt="All dailies complete">`);
   else if (dailyLink && !allDone && badge) badge.remove();
   const heart = (cls = "", img = "heart") => `<img class="heart${cls}" src="src/imgs/icons/${img}.webp" alt="">`;
   const lostHeart = () => heart(" heart--lost", "broken-heart");
@@ -155,6 +159,7 @@ export function render() {
   // A daily that's already been completed today is locked: blurred, dimmed and covered by a banner
   const locked = state.mode === "daily" && (!ended || state.resultDismissed) && dailyDone(state.difficulty);
   state.locked = locked;
+  $("leave-daily").hidden = state.mode !== "daily" || locked; // on a completed daily the button lives in the Complete modal instead
   g.classList.toggle("is-blurred", showResult || locked);
   msg.textContent = "";
   if (resultVisible && overlay.hidden) resultShownAt = performance.now(); // popup is just appearing
@@ -170,13 +175,15 @@ export function render() {
         `</div>`
       : "";
     overlay.innerHTML =
-      `<img class="overlay__lock" src="src/imgs/icons/lock.webp" alt="">` +
+      `<img class="overlay__lock" src="src/imgs/icons/complete.webp" alt="">` +
       `<div class="result result--locked" role="status">` +
         `<p class="result__eyebrow">Daily complete</p>` +
         `<p class="result__text">You have already completed this daily puzzle!</p>` +
         earned +
         `<p class="result__text">Come back tomorrow for another round!</p>` +
+        `<div class="result__actions"><button type="button" class="primary" id="leave-daily-modal"><img class="inline-icon" src="src/imgs/icons/exit.webp" alt=""> Leave Daily</button></div>` +
       `</div>`;
+    $("leave-daily-modal").onclick = () => { exitDaily(); render(); };
   } else if (resultVisible) {
     renderResult(overlay);
   } else {

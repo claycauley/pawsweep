@@ -114,10 +114,12 @@ $breakpoint: 760px;
 
     // "All dailies complete" badge at the end of the button
     &-done {
-      width: 1.5em;
-      height: 1.5em;
+      width: 5em;
       object-fit: contain;
       margin-left: auto; // pushed to the far right of the button
+
+      // Desktop: no badge (it only shows in the mobile menu)
+      @media (min-width: 761px) { display: none; }
     }
 
     &:hover,
