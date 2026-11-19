@@ -212,7 +212,7 @@ export function render() {
   const none = id => { const p = POWERUPS.find(x => x.id === id); return !state[p.stat] && (showTip(`No more <img class="inline-icon tip-icon" src="${p.src}" alt="${p.label}"> available!`, true), true); };
   $("b1").onclick = () => { if (none("b1")) return; if (state.hint) return showTip("There is already an active hint."); useHint(); render(); };
   $("b2").onclick = () => { if (none("b2")) return; if (state.shield > 0) return showTip("A shield is already protecting you!"); const had = state.shield; useShield(); if (state.shield > had) playSfx("src/sfx/shield-equip.mp3"); render(); };
-  $("b3").onclick = () => { if (none("b3")) return; if (!canLife()) return showTip("Your hearts are already full!"); useLife(); playSfx("src/sfx/life-up.mp3"); render(); };
+  $("b3").onclick = () => { if (none("b3")) return; if (!canLife()) return showTip("Your hearts are already full!"); useLife(); playSfx("src/sfx/undo.mp3"); render(); };
 }
 
 // Small message inside the power-ups box (same look as the Share toast, no close button). Fades on its own.
