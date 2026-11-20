@@ -181,7 +181,7 @@ export function render() {
         `<p class="result__text">You have already completed this daily puzzle!</p>` +
         earned +
         `<p class="result__text">Come back tomorrow for another round!</p>` +
-        `<div class="result__actions"><button type="button" class="primary" id="leave-daily-modal"><img class="inline-icon" src="src/imgs/icons/exit.webp" alt=""> Leave Daily</button></div>` +
+        `<div class="result__actions"><button type="button" class="primary" id="leave-daily-modal"><img class="inline-icon" src="src/imgs/icons/exit.webp" alt=""> Back To Main Puzzles</button></div>` +
       `</div>`;
     $("leave-daily-modal").onclick = () => { exitDaily(); render(); };
   } else if (resultVisible) {
